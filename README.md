@@ -1,87 +1,179 @@
-# Inventory Management System Backend
+# Inventory Management API
 
-A Node.js backend application built with TypeScript, Express, MongoDB, and Mongoose.
+A robust backend API for inventory management built with Node.js, Express, TypeScript, and MongoDB.
 
 ## Features
 
-- TypeScript for type safety
-- Express.js for the web server
-- MongoDB with Mongoose for database operations
-- Modular architecture
-- RESTful API endpoints
-- Error handling middleware
-- Environment variable configuration
-- CORS enabled
-- Security headers with Helmet
-- Request logging with Morgan
+- **Authentication & Authorization**: Secure JWT-based authentication with role-based access control
+- **Item Management**: Create, read, update, and delete inventory items
+- **Customer Management**: Customer data handling with contact information
+- **Sales Order Management**: Process and track sales orders
+- **Low Stock Alerts**: Automatically identify items that need reordering
+
+## Tech Stack
+
+- **Runtime**: Node.js
+- **Framework**: Express.js
+- **Language**: TypeScript
+- **Database**: MongoDB with Mongoose ODM
+- **Authentication**: JWT (JSON Web Tokens)
+- **Validation**: Zod schema validation
+- **Error Handling**: Global error handler with custom error classes
 
 ## Prerequisites
 
-- Node.js (v14 or higher)
+- Node.js (v18+)
 - MongoDB (local or Atlas)
-- npm or yarn
+- Git
 
 ## Installation
 
-1. Clone the repository
+1. Clone the repository:
+
+   ```bash
+   git clone <repository-url>
+   cd backend
+   ```
+
 2. Install dependencies:
+
    ```bash
    npm install
    ```
+
 3. Create a `.env` file in the root directory with the following variables:
    ```
-   PORT=5000
-   MONGODB_URI=mongodb://localhost:27017/inventory
    NODE_ENV=development
+   PORT=5001
+   MONGODB_URI=mongodb://localhost:27017/inventory-db
+   BCRYPT_SALT_ROUNDS=12
+   JWT_SECRET=your-jwt-secret-key-here
+   JWT_EXPIRES_IN=1d
+   JWT_REFRESH_SECRET=your-jwt-refresh-secret-key-here
+   JWT_REFRESH_EXPIRES_IN=7d
    ```
 
-## Running the Application
+## Development
 
-Development mode:
+Start the development server with hot-reloading:
 
 ```bash
 npm run dev
 ```
 
-Production mode:
+## Production Build
+
+Build the project:
 
 ```bash
 npm run build
+```
+
+Start the production server:
+
+```bash
 npm start
 ```
 
-## API Endpoints
+## API Documentation
 
-### Products
+### Authentication
 
-- GET `/api/products` - Get all products
-- GET `/api/products/:id` - Get a single product
-- POST `/api/products` - Create a new product
-- PUT `/api/products/:id` - Update a product
-- DELETE `/api/products/:id` - Delete a product
+| Endpoint                  | Method | Description          | Access |
+| ------------------------- | ------ | -------------------- | ------ |
+| `/api/auth/register`      | POST   | Register a new user  | Public |
+| `/api/auth/login`         | POST   | Login and get tokens | Public |
+| `/api/auth/refresh-token` | POST   | Refresh access token | Public |
 
-## Project Structure
+### Items
 
-```
-src/
-├── config/         # Configuration files
-├── controllers/    # Route controllers
-├── models/         # Mongoose models
-├── routes/         # Express routes
-├── services/       # Business logic
-├── utils/          # Utility functions
-├── middleware/     # Custom middleware
-└── index.ts        # Application entry point
-```
+| Endpoint               | Method | Description         | Access         |
+| ---------------------- | ------ | ------------------- | -------------- |
+| `/api/items`           | GET    | Get all items       | Public         |
+| `/api/items/:id`       | GET    | Get single item     | Public         |
+| `/api/items/low-stock` | GET    | Get low stock items | Public         |
+| `/api/items/create`    | POST   | Create new item     | Admin, Manager |
+| `/api/items/:id`       | PATCH  | Update item         | Admin, Manager |
+| `/api/items/:id`       | DELETE | Delete item         | Admin          |
+
+### Customers
+
+| Endpoint                | Method | Description         | Access         |
+| ----------------------- | ------ | ------------------- | -------------- |
+| `/api/customers`        | GET    | Get all customers   | Public         |
+| `/api/customers/:id`    | GET    | Get single customer | Public         |
+| `/api/customers/create` | POST   | Create new customer | Admin, Manager |
+| `/api/customers/:id`    | PATCH  | Update customer     | Admin, Manager |
+| `/api/customers/:id`    | DELETE | Delete customer     | Admin          |
+
+### Sales Orders
+
+| Endpoint                   | Method | Description            | Access                   |
+| -------------------------- | ------ | ---------------------- | ------------------------ |
+| `/api/sales-orders`        | GET    | Get all sales orders   | Public                   |
+| `/api/sales-orders/:id`    | GET    | Get single sales order | Public                   |
+| `/api/sales-orders/create` | POST   | Create new sales order | Admin, Manager, Employee |
+| `/api/sales-orders/:id`    | PATCH  | Update sales order     | Admin, Manager           |
+| `/api/sales-orders/:id`    | DELETE | Delete sales order     | Admin                    |
+
+## Data Models
+
+### User
+
+- Name
+- Email
+- Password (hashed)
+- Role (admin, manager, employee)
+- isActive
+- isVerified
+
+### Item
+
+- Type (Goods or Service)
+- Name
+- SKU
+- Unit
+- isReturnable
+- Dimensions (optional)
+- Weight (optional)
+- Manufacturer (optional)
+- Brand (optional)
+- Pricing information
+- Inventory tracking
+
+### Customer
+
+- Name
+- Email
+- Phone
+- Address
+- Contact Persons
+
+### Sales Order
+
+- Customer reference
+- Order date
+- Status
+- Items
+- Total amount
+- Shipping details
 
 ## Error Handling
 
-The application includes a global error handling middleware that catches and processes errors in a consistent way.
+The API uses a global error handler that standardizes error responses across the application. All errors return:
 
-## Security
+- HTTP status code
+- Error message
+- Error details (when applicable)
 
-- CORS enabled
-- Helmet for security headers
-- Environment variables for sensitive data
-- Input validation
-- Error handling
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the ISC License.

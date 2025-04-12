@@ -1,0 +1,1 @@
+{"version":3,"file":"handleCastError.js","sourceRoot":"","sources":["../../../src/app/errors/handleCastError.ts"],"names":[],"mappings":";;AAEA,MAAM,eAAe,GAAG,CAAC,GAA6B,EAAE,EAAE;IACxD,MAAM,YAAY,GAAG,WAAW,GAAG,CAAC,IAAI,KAAK,GAAG,CAAC,KAAK,EAAE,CAAC;IACzD,OAAO;QACL,UAAU,EAAE,GAAG;QACf,OAAO,EAAE,YAAY;QACrB,YAAY;KACb,CAAC;AACJ,CAAC,CAAC;AAEF,kBAAe,eAAe,CAAC"}

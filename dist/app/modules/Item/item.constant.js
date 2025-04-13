@@ -12,7 +12,6 @@ exports.itemFilterableFields = [
     "searchTerm",
     "name",
     "sku",
-    "type",
     "minPrice",
     "maxPrice",
     "brand",

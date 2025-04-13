@@ -8,7 +8,6 @@ const orderItemValidationSchema = zod_1.z.object({
     }),
     quantity: zod_1.z.number().positive(),
     rate: zod_1.z.number().nonnegative(),
-    tax: zod_1.z.string().optional(),
     amount: zod_1.z.number().nonnegative().optional(),
 });
 const discountValidationSchema = zod_1.z.object({

@@ -43,8 +43,7 @@ const createSalesOrder = async (payload) => {
             if (!itemDoc) {
                 throw new AppError_1.default(http_status_1.default.NOT_FOUND, `Item not found: ${item.item}`);
             }
-            if (itemDoc.type === "Goods" &&
-                item.quantity > (itemDoc.openingStock || 0)) {
+            if (item.quantity > (itemDoc.openingStock || 0)) {
                 throw new AppError_1.default(http_status_1.default.BAD_REQUEST, `Not enough stock for item: ${itemDoc.name}. Available: ${itemDoc.openingStock || 0}, Requested: ${item.quantity}`);
             }
             const amount = item.amount || item.quantity * item.rate;
@@ -52,9 +51,7 @@ const createSalesOrder = async (payload) => {
                 ...item,
                 amount,
             });
-            if (itemDoc.type === "Goods") {
-                await item_model_1.Item.findByIdAndUpdate(item.item, { $inc: { openingStock: -item.quantity } }, { session });
-            }
+            await item_model_1.Item.findByIdAndUpdate(item.item, { $inc: { openingStock: -item.quantity } }, { session });
         }
         if (!payload.orderNumber) {
             payload.orderNumber = await generateOrderNumber();
@@ -178,10 +175,7 @@ const updateSalesOrder = async (id, payload) => {
         }
         if (payload.items) {
             for (const item of originalOrder.items) {
-                const itemDoc = await item_model_1.Item.findById(item.item).session(session);
-                if (itemDoc && itemDoc.type === "Goods") {
-                    await item_model_1.Item.findByIdAndUpdate(item.item, { $inc: { openingStock: item.quantity } }, { session });
-                }
+                await item_model_1.Item.findByIdAndUpdate(item.item, { $inc: { openingStock: item.quantity } }, { session });
             }
             const processedItems = [];
             for (const item of payload.items) {
@@ -189,8 +183,7 @@ const updateSalesOrder = async (id, payload) => {
                 if (!itemDoc) {
                     throw new AppError_1.default(http_status_1.default.NOT_FOUND, `Item not found: ${item.item}`);
                 }
-                if (itemDoc.type === "Goods" &&
-                    item.quantity > (itemDoc.openingStock || 0)) {
+                if (item.quantity > (itemDoc.openingStock || 0)) {
                     throw new AppError_1.default(http_status_1.default.BAD_REQUEST, `Not enough stock for item: ${itemDoc.name}. Available: ${itemDoc.openingStock || 0}, Requested: ${item.quantity}`);
                 }
                 const amount = item.amount || item.quantity * item.rate;
@@ -198,9 +191,7 @@ const updateSalesOrder = async (id, payload) => {
                     ...item,
                     amount,
                 });
-                if (itemDoc.type === "Goods") {
-                    await item_model_1.Item.findByIdAndUpdate(item.item, { $inc: { openingStock: -item.quantity } }, { session });
-                }
+                await item_model_1.Item.findByIdAndUpdate(item.item, { $inc: { openingStock: -item.quantity } }, { session });
             }
             payload.items = processedItems;
             payload.subTotal = processedItems.reduce((sum, item) => sum + item.amount, 0);
@@ -255,10 +246,7 @@ const updateOrderStatus = async (id, status) => {
         }
         if (status === "Cancelled" && salesOrder.status !== "Cancelled") {
             for (const item of salesOrder.items) {
-                const itemDoc = await item_model_1.Item.findById(item.item).session(session);
-                if (itemDoc && itemDoc.type === "Goods") {
-                    await item_model_1.Item.findByIdAndUpdate(item.item, { $inc: { openingStock: item.quantity } }, { session });
-                }
+                await item_model_1.Item.findByIdAndUpdate(item.item, { $inc: { openingStock: item.quantity } }, { session });
             }
         }
         const result = await salesOrder_model_1.SalesOrder.findByIdAndUpdate(id, { status }, { new: true, runValidators: true, session });
@@ -281,10 +269,7 @@ const deleteSalesOrder = async (id) => {
             throw new AppError_1.default(http_status_1.default.NOT_FOUND, "Sales order not found");
         }
         for (const item of salesOrder.items) {
-            const itemDoc = await item_model_1.Item.findById(item.item).session(session);
-            if (itemDoc && itemDoc.type === "Goods") {
-                await item_model_1.Item.findByIdAndUpdate(item.item, { $inc: { openingStock: item.quantity } }, { session });
-            }
+            await item_model_1.Item.findByIdAndUpdate(item.item, { $inc: { openingStock: item.quantity } }, { session });
         }
         await salesOrder_model_1.SalesOrder.findByIdAndDelete(id).session(session);
         await session.commitTransaction();

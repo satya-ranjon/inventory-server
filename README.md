@@ -2,6 +2,10 @@
 
 A robust backend API for inventory management built with Node.js, Express, TypeScript, and MongoDB.
 
+## Live API
+
+The API is deployed and accessible at: [https://in-server-theta.vercel.app/](https://in-server-theta.vercel.app/)
+
 ## Features
 
 - **Authentication & Authorization**: Secure JWT-based authentication with role-based access control

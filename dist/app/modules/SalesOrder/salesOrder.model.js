@@ -51,7 +51,6 @@ const orderItemSchema = new mongoose_1.Schema({
         required: true,
         min: 0,
     },
-    tax: String,
     amount: {
         type: Number,
         required: true,

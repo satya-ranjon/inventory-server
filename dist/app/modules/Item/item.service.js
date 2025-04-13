@@ -91,9 +91,6 @@ const updateInventory = async (id, quantity) => {
         if (!item) {
             throw new AppError_1.default(http_status_1.default.NOT_FOUND, "Item not found");
         }
-        if (item.type === "Service") {
-            throw new AppError_1.default(http_status_1.default.BAD_REQUEST, "Cannot update inventory for service items");
-        }
         const currentStock = item.openingStock || 0;
         const updatedItem = await item_model_1.Item.findByIdAndUpdate(id, { openingStock: currentStock + quantity }, { new: true, runValidators: true, session });
         await session.commitTransaction();

@@ -14,10 +14,8 @@ const weightValidationSchema = zod_1.z.object({
 });
 const createItemValidationSchema = zod_1.z.object({
     body: zod_1.z.object({
-        type: zod_1.z.enum(["Goods", "Service"]),
         name: zod_1.z.string().min(1),
         sku: zod_1.z.string().optional(),
-        unit: zod_1.z.string(),
         isReturnable: zod_1.z.boolean().optional(),
         dimensions: dimensionsValidationSchema.optional(),
         weight: weightValidationSchema.optional(),
@@ -31,7 +29,6 @@ const createItemValidationSchema = zod_1.z.object({
         salesAccount: zod_1.z.string(),
         description: zod_1.z.string().optional(),
         tax: zod_1.z.string().optional(),
-        costPrice: zod_1.z.number().min(0),
         costAccount: zod_1.z.string(),
         preferredVendor: zod_1.z.string().optional(),
         inventoryAccount: zod_1.z.string().optional(),
@@ -42,10 +39,8 @@ const createItemValidationSchema = zod_1.z.object({
 });
 const updateItemValidationSchema = zod_1.z.object({
     body: zod_1.z.object({
-        type: zod_1.z.enum(["Goods", "Service"]).optional(),
         name: zod_1.z.string().min(1).optional(),
         sku: zod_1.z.string().optional(),
-        unit: zod_1.z.string().optional(),
         isReturnable: zod_1.z.boolean().optional(),
         dimensions: dimensionsValidationSchema.optional(),
         weight: weightValidationSchema.optional(),
@@ -59,7 +54,6 @@ const updateItemValidationSchema = zod_1.z.object({
         salesAccount: zod_1.z.string().optional(),
         description: zod_1.z.string().optional(),
         tax: zod_1.z.string().optional(),
-        costPrice: zod_1.z.number().min(0).optional(),
         costAccount: zod_1.z.string().optional(),
         preferredVendor: zod_1.z.string().optional(),
         inventoryAccount: zod_1.z.string().optional(),

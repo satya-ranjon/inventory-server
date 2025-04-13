@@ -46,11 +46,6 @@ const weightSchema = new mongoose_1.Schema({
     unit: { type: String },
 }, { _id: false });
 const itemSchema = new mongoose_1.Schema({
-    type: {
-        type: String,
-        enum: ["Goods", "Service"],
-        required: true,
-    },
     name: {
         type: String,
         required: true,
@@ -60,10 +55,6 @@ const itemSchema = new mongoose_1.Schema({
         type: String,
         unique: true,
         sparse: true,
-    },
-    unit: {
-        type: String,
-        required: true,
     },
     isReturnable: {
         type: Boolean,
@@ -88,11 +79,6 @@ const itemSchema = new mongoose_1.Schema({
     },
     description: String,
     tax: String,
-    costPrice: {
-        type: Number,
-        required: true,
-        min: 0,
-    },
     costAccount: {
         type: String,
         required: true,
@@ -116,6 +102,5 @@ const itemSchema = new mongoose_1.Schema({
 });
 itemSchema.index({ name: 1 });
 itemSchema.index({ sku: 1 });
-itemSchema.index({ type: 1 });
 exports.Item = mongoose_1.default.model("Item", itemSchema);
 //# sourceMappingURL=item.model.js.map

@@ -63,11 +63,8 @@ const createSalesOrder = async (payload: TSalesOrder) => {
         );
       }
 
-      // Check inventory for goods items
-      if (
-        itemDoc.type === "Goods" &&
-        item.quantity > (itemDoc.openingStock || 0)
-      ) {
+      // Check inventory - removed type check
+      if (item.quantity > (itemDoc.openingStock || 0)) {
         throw new AppError(
           httpStatus.BAD_REQUEST,
           `Not enough stock for item: ${itemDoc.name}. Available: ${
@@ -84,14 +81,12 @@ const createSalesOrder = async (payload: TSalesOrder) => {
         amount,
       });
 
-      // Update inventory for goods items
-      if (itemDoc.type === "Goods") {
-        await Item.findByIdAndUpdate(
-          item.item,
-          { $inc: { openingStock: -item.quantity } },
-          { session }
-        );
-      }
+      // Update inventory - removed type check
+      await Item.findByIdAndUpdate(
+        item.item,
+        { $inc: { openingStock: -item.quantity } },
+        { session }
+      );
     }
 
     // Generate order number if not provided
@@ -261,14 +256,11 @@ const updateSalesOrder = async (id: string, payload: Partial<TSalesOrder>) => {
     if (payload.items) {
       // Restore original inventory first
       for (const item of originalOrder.items) {
-        const itemDoc = await Item.findById(item.item).session(session);
-        if (itemDoc && itemDoc.type === "Goods") {
-          await Item.findByIdAndUpdate(
-            item.item,
-            { $inc: { openingStock: item.quantity } },
-            { session }
-          );
-        }
+        await Item.findByIdAndUpdate(
+          item.item,
+          { $inc: { openingStock: item.quantity } },
+          { session }
+        );
       }
 
       // Process new items
@@ -284,11 +276,8 @@ const updateSalesOrder = async (id: string, payload: Partial<TSalesOrder>) => {
           );
         }
 
-        // Check inventory for goods items
-        if (
-          itemDoc.type === "Goods" &&
-          item.quantity > (itemDoc.openingStock || 0)
-        ) {
+        // Check inventory - removed type check
+        if (item.quantity > (itemDoc.openingStock || 0)) {
           throw new AppError(
             httpStatus.BAD_REQUEST,
             `Not enough stock for item: ${itemDoc.name}. Available: ${
@@ -305,14 +294,12 @@ const updateSalesOrder = async (id: string, payload: Partial<TSalesOrder>) => {
           amount,
         });
 
-        // Update inventory for goods items
-        if (itemDoc.type === "Goods") {
-          await Item.findByIdAndUpdate(
-            item.item,
-            { $inc: { openingStock: -item.quantity } },
-            { session }
-          );
-        }
+        // Update inventory - removed type check
+        await Item.findByIdAndUpdate(
+          item.item,
+          { $inc: { openingStock: -item.quantity } },
+          { session }
+        );
       }
 
       payload.items = processedItems;
@@ -387,16 +374,13 @@ const updateOrderStatus = async (id: string, status: string) => {
 
     // Handle cancellation
     if (status === "Cancelled" && salesOrder.status !== "Cancelled") {
-      // Restore inventory for cancelled orders
+      // Restore inventory for cancelled orders - removed type check
       for (const item of salesOrder.items) {
-        const itemDoc = await Item.findById(item.item).session(session);
-        if (itemDoc && itemDoc.type === "Goods") {
-          await Item.findByIdAndUpdate(
-            item.item,
-            { $inc: { openingStock: item.quantity } },
-            { session }
-          );
-        }
+        await Item.findByIdAndUpdate(
+          item.item,
+          { $inc: { openingStock: item.quantity } },
+          { session }
+        );
       }
     }
 
@@ -429,16 +413,13 @@ const deleteSalesOrder = async (id: string) => {
       throw new AppError(httpStatus.NOT_FOUND, "Sales order not found");
     }
 
-    // Restore inventory
+    // Restore inventory - removed type check
     for (const item of salesOrder.items) {
-      const itemDoc = await Item.findById(item.item).session(session);
-      if (itemDoc && itemDoc.type === "Goods") {
-        await Item.findByIdAndUpdate(
-          item.item,
-          { $inc: { openingStock: item.quantity } },
-          { session }
-        );
-      }
+      await Item.findByIdAndUpdate(
+        item.item,
+        { $inc: { openingStock: item.quantity } },
+        { session }
+      );
     }
 
     // Delete the order

@@ -11,7 +11,7 @@ export type TOrderItem = {
   item: Types.ObjectId;
   quantity: number;
   rate: number;
-  tax?: string;
+  // tax field removed
   amount: number;
 };
 

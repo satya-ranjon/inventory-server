@@ -6,7 +6,6 @@ const orderItemValidationSchema = z.object({
   }),
   quantity: z.number().positive(),
   rate: z.number().nonnegative(),
-  tax: z.string().optional(),
   amount: z.number().nonnegative().optional(),
 });
 

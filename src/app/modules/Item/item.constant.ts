@@ -10,7 +10,6 @@ export const itemFilterableFields = [
   "searchTerm",
   "name",
   "sku",
-  "type",
   "minPrice",
   "maxPrice",
   "brand",

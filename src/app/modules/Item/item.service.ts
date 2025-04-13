@@ -114,13 +114,6 @@ const updateInventory = async (id: string, quantity: number) => {
       throw new AppError(httpStatus.NOT_FOUND, "Item not found");
     }
 
-    if (item.type === "Service") {
-      throw new AppError(
-        httpStatus.BAD_REQUEST,
-        "Cannot update inventory for service items"
-      );
-    }
-
     const currentStock = item.openingStock || 0;
     const updatedItem = await Item.findByIdAndUpdate(
       id,

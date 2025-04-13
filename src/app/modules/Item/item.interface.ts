@@ -1,7 +1,5 @@
 import { Model, Document } from "mongoose";
 
-export type TItemType = "Goods" | "Service";
-
 export type TDimensions = {
   length: number;
   width: number;
@@ -15,10 +13,8 @@ export type TWeight = {
 };
 
 export type TItem = {
-  type: TItemType;
   name: string;
   sku: string;
-  unit: string;
   isReturnable: boolean;
   dimensions?: TDimensions;
   weight?: TWeight;
@@ -36,7 +32,6 @@ export type TItem = {
   tax?: string;
 
   // Purchase Information
-  costPrice: number;
   costAccount: string;
   preferredVendor?: string;
 
@@ -58,7 +53,6 @@ export type TItemFilters = {
   searchTerm?: string;
   name?: string;
   sku?: string;
-  type?: TItemType;
   minPrice?: number;
   maxPrice?: number;
 };

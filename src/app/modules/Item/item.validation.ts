@@ -14,10 +14,8 @@ const weightValidationSchema = z.object({
 
 const createItemValidationSchema = z.object({
   body: z.object({
-    type: z.enum(["Goods", "Service"]),
     name: z.string().min(1),
     sku: z.string().optional(),
-    unit: z.string(),
     isReturnable: z.boolean().optional(),
     dimensions: dimensionsValidationSchema.optional(),
     weight: weightValidationSchema.optional(),
@@ -33,7 +31,6 @@ const createItemValidationSchema = z.object({
     description: z.string().optional(),
     tax: z.string().optional(),
 
-    costPrice: z.number().min(0),
     costAccount: z.string(),
     preferredVendor: z.string().optional(),
 
@@ -46,10 +43,8 @@ const createItemValidationSchema = z.object({
 
 const updateItemValidationSchema = z.object({
   body: z.object({
-    type: z.enum(["Goods", "Service"]).optional(),
     name: z.string().min(1).optional(),
     sku: z.string().optional(),
-    unit: z.string().optional(),
     isReturnable: z.boolean().optional(),
     dimensions: dimensionsValidationSchema.optional(),
     weight: weightValidationSchema.optional(),
@@ -65,7 +60,6 @@ const updateItemValidationSchema = z.object({
     description: z.string().optional(),
     tax: z.string().optional(),
 
-    costPrice: z.number().min(0).optional(),
     costAccount: z.string().optional(),
     preferredVendor: z.string().optional(),
 

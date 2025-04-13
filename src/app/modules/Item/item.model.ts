@@ -21,11 +21,6 @@ const weightSchema = new Schema(
 
 const itemSchema = new Schema<IItem>(
   {
-    type: {
-      type: String,
-      enum: ["Goods", "Service"],
-      required: true,
-    },
     name: {
       type: String,
       required: true,
@@ -35,10 +30,6 @@ const itemSchema = new Schema<IItem>(
       type: String,
       unique: true,
       sparse: true,
-    },
-    unit: {
-      type: String,
-      required: true,
     },
     isReturnable: {
       type: Boolean,
@@ -67,11 +58,6 @@ const itemSchema = new Schema<IItem>(
     tax: String,
 
     // Purchase Information
-    costPrice: {
-      type: Number,
-      required: true,
-      min: 0,
-    },
     costAccount: {
       type: String,
       required: true,
@@ -101,6 +87,5 @@ const itemSchema = new Schema<IItem>(
 // Create indexes for frequently searched fields
 itemSchema.index({ name: 1 });
 itemSchema.index({ sku: 1 });
-itemSchema.index({ type: 1 });
 
 export const Item = mongoose.model<IItem, TItemModel>("Item", itemSchema);

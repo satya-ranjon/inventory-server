@@ -65,6 +65,17 @@ const updateOrderStatus = (0, catchAsync_1.default)(async (req, res) => {
         data: result,
     });
 });
+const updatePayment = (0, catchAsync_1.default)(async (req, res) => {
+    const { id } = req.params;
+    const { payment } = req.body;
+    const result = await salesOrder_service_1.SalesOrderService.updateSalesOrder(id, { payment });
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: "Payment updated successfully",
+        data: result,
+    });
+});
 const deleteSalesOrder = (0, catchAsync_1.default)(async (req, res) => {
     const { id } = req.params;
     const result = await salesOrder_service_1.SalesOrderService.deleteSalesOrder(id);
@@ -90,6 +101,7 @@ exports.SalesOrderController = {
     getSalesOrderById,
     updateSalesOrder,
     updateOrderStatus,
+    updatePayment,
     deleteSalesOrder,
     getSingleSalesOrder,
 };

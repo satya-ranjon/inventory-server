@@ -12,7 +12,7 @@ const AppError_1 = __importDefault(require("../../errors/AppError"));
 const http_status_1 = __importDefault(require("http-status"));
 const mongoose_2 = require("mongoose");
 const createItem = async (payload) => {
-    const result = await item_model_1.Item.create(payload);
+    const result = (await item_model_1.Item.create(payload)).populate("entryBy");
     return result;
 };
 const getAllItems = async (filters) => {
@@ -36,13 +36,13 @@ const getAllItems = async (filters) => {
         });
     }
     if (minPrice !== undefined) {
-        andConditions.push({ sellingPrice: { $gte: minPrice } });
+        andConditions.push({ price: { $gte: minPrice } });
     }
     if (maxPrice !== undefined) {
-        andConditions.push({ sellingPrice: { $lte: maxPrice } });
+        andConditions.push({ price: { $lte: maxPrice } });
     }
     const whereConditions = andConditions.length > 0 ? { $and: andConditions } : {};
-    const itemQuery = item_model_1.Item.find(whereConditions);
+    const itemQuery = item_model_1.Item.find(whereConditions).populate("entryBy");
     const queryBuilder = new QueryBuilder_1.default(itemQuery, filters)
         .filter()
         .sort()
@@ -91,8 +91,8 @@ const updateInventory = async (id, quantity) => {
         if (!item) {
             throw new AppError_1.default(http_status_1.default.NOT_FOUND, "Item not found");
         }
-        const currentStock = item.openingStock || 0;
-        const updatedItem = await item_model_1.Item.findByIdAndUpdate(id, { openingStock: currentStock + quantity }, { new: true, runValidators: true, session });
+        const currentStock = item.quantity || 0;
+        const updatedItem = await item_model_1.Item.findByIdAndUpdate(id, { quantity: currentStock + quantity }, { new: true, runValidators: true, session });
         await session.commitTransaction();
         session.endSession();
         return updatedItem;
@@ -102,18 +102,6 @@ const updateInventory = async (id, quantity) => {
         session.endSession();
         throw error;
     }
-};
-const getLowStockItems = async () => {
-    const items = await item_model_1.Item.find({
-        type: "Goods",
-        $expr: {
-            $and: [
-                { $ne: [{ $ifNull: ["$reorderPoint", 0] }, 0] },
-                { $lt: [{ $ifNull: ["$openingStock", 0] }, "$reorderPoint"] },
-            ],
-        },
-    });
-    return items;
 };
 const getSingleItem = async (id) => {
     if (!(0, mongoose_2.isValidObjectId)(id)) {
@@ -133,6 +121,5 @@ exports.ItemService = {
     updateItem,
     deleteItem,
     updateInventory,
-    getLowStockItems,
 };
 //# sourceMappingURL=item.service.js.map

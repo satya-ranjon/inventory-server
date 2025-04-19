@@ -14,7 +14,5 @@ router.post("/", (0, validateRequest_1.default)(customer_validation_1.CustomerVa
 router.get("/:id", customer_controller_1.CustomerController.getCustomerById);
 router.put("/:id", (0, validateRequest_1.default)(customer_validation_1.CustomerValidation.updateCustomerValidationSchema), customer_controller_1.CustomerController.updateCustomer);
 router.delete("/:id", customer_controller_1.CustomerController.deleteCustomer);
-router.post("/:id/contacts", (0, validateRequest_1.default)(customer_validation_1.CustomerValidation.addContactPersonValidationSchema), customer_controller_1.CustomerController.addContactPerson);
-router.put("/:id/contacts/:contactIndex", (0, validateRequest_1.default)(customer_validation_1.CustomerValidation.addContactPersonValidationSchema), customer_controller_1.CustomerController.updateContactPerson);
 exports.CustomerRoutes = router;
 //# sourceMappingURL=customer.route.js.map

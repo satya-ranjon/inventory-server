@@ -11,15 +11,6 @@ const AppError_1 = __importDefault(require("../../errors/AppError"));
 const http_status_1 = __importDefault(require("http-status"));
 const mongoose_1 = require("mongoose");
 const createCustomer = async (payload) => {
-    if (!payload.displayName) {
-        if (payload.customerType === "Business" && payload.companyName) {
-            payload.displayName = payload.companyName;
-        }
-        else if (payload.primaryContact) {
-            const { firstName, lastName } = payload.primaryContact;
-            payload.displayName = `${firstName} ${lastName}`;
-        }
-    }
     const result = await customer_model_1.Customer.create(payload);
     return result;
 };
@@ -85,30 +76,6 @@ const deleteCustomer = async (id) => {
     }
     return result;
 };
-const addContactPerson = async (id, contactPersonData) => {
-    const customer = await customer_model_1.Customer.findById(id);
-    if (!customer) {
-        throw new AppError_1.default(http_status_1.default.NOT_FOUND, "Customer not found");
-    }
-    if (!customer.contactPersons) {
-        customer.contactPersons = [];
-    }
-    customer.contactPersons.push(contactPersonData);
-    const result = await customer.save();
-    return result;
-};
-const updateContactPerson = async (id, contactIndex, contactPersonData) => {
-    const customer = await customer_model_1.Customer.findById(id);
-    if (!customer) {
-        throw new AppError_1.default(http_status_1.default.NOT_FOUND, "Customer not found");
-    }
-    if (!customer.contactPersons || !customer.contactPersons[contactIndex]) {
-        throw new AppError_1.default(http_status_1.default.NOT_FOUND, "Contact person not found");
-    }
-    Object.assign(customer.contactPersons[contactIndex], contactPersonData);
-    const result = await customer.save();
-    return result;
-};
 const getSingleCustomer = async (id) => {
     if (!(0, mongoose_1.isValidObjectId)(id)) {
         throw new AppError_1.default(http_status_1.default.BAD_REQUEST, "Invalid customer ID");
@@ -125,8 +92,6 @@ exports.CustomerService = {
     getCustomerById,
     updateCustomer,
     deleteCustomer,
-    addContactPerson,
-    updateContactPerson,
     getSingleCustomer,
 };
 //# sourceMappingURL=customer.service.js.map

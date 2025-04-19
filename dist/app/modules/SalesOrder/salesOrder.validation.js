@@ -9,14 +9,11 @@ const orderItemValidationSchema = zod_1.z.object({
     quantity: zod_1.z.number().positive(),
     rate: zod_1.z.number().nonnegative(),
     amount: zod_1.z.number().nonnegative().optional(),
+    discount: zod_1.z.number().nonnegative().optional(),
 });
 const discountValidationSchema = zod_1.z.object({
     type: zod_1.z.enum(["percentage", "amount"]),
     value: zod_1.z.number().nonnegative(),
-});
-const attachmentValidationSchema = zod_1.z.object({
-    fileName: zod_1.z.string(),
-    fileUrl: zod_1.z.string().url({ message: "Invalid URL format" }),
 });
 const createSalesOrderValidationSchema = zod_1.z.object({
     body: zod_1.z.object({
@@ -26,7 +23,6 @@ const createSalesOrderValidationSchema = zod_1.z.object({
         }),
         reference: zod_1.z.string().optional(),
         salesOrderDate: zod_1.z.string().datetime().optional(),
-        expectedShipmentDate: zod_1.z.string().datetime().optional(),
         paymentTerms: zod_1.z.string(),
         deliveryMethod: zod_1.z.string().optional(),
         salesPerson: zod_1.z.string().optional(),
@@ -41,13 +37,13 @@ const createSalesOrderValidationSchema = zod_1.z.object({
         status: zod_1.z
             .enum(["Draft", "Confirmed", "Shipped", "Delivered", "Cancelled"])
             .optional(),
-        attachments: zod_1.z.array(attachmentValidationSchema).optional(),
+        payment: zod_1.z.number().nonnegative().optional(),
+        due: zod_1.z.number().optional(),
     }),
 });
 const updateSalesOrderValidationSchema = zod_1.z.object({
     body: zod_1.z.object({
         reference: zod_1.z.string().optional(),
-        expectedShipmentDate: zod_1.z.string().datetime().optional(),
         paymentTerms: zod_1.z.string().optional(),
         deliveryMethod: zod_1.z.string().optional(),
         salesPerson: zod_1.z.string().optional(),
@@ -57,7 +53,7 @@ const updateSalesOrderValidationSchema = zod_1.z.object({
         adjustment: zod_1.z.number().optional(),
         customerNotes: zod_1.z.string().optional(),
         termsAndConditions: zod_1.z.string().optional(),
-        attachments: zod_1.z.array(attachmentValidationSchema).optional(),
+        payment: zod_1.z.number().nonnegative().optional(),
     }),
 });
 const updateOrderStatusValidationSchema = zod_1.z.object({
@@ -65,9 +61,15 @@ const updateOrderStatusValidationSchema = zod_1.z.object({
         status: zod_1.z.enum(["Draft", "Confirmed", "Shipped", "Delivered", "Cancelled"]),
     }),
 });
+const updatePaymentValidationSchema = zod_1.z.object({
+    body: zod_1.z.object({
+        payment: zod_1.z.number().nonnegative(),
+    }),
+});
 exports.SalesOrderValidation = {
     createSalesOrderValidationSchema,
     updateSalesOrderValidationSchema,
     updateOrderStatusValidationSchema,
+    updatePaymentValidationSchema,
 };
 //# sourceMappingURL=salesOrder.validation.js.map

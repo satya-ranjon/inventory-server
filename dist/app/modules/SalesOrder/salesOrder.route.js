@@ -14,6 +14,7 @@ router.post("/", (0, validateRequest_1.default)(salesOrder_validation_1.SalesOrd
 router.get("/:id", salesOrder_controller_1.SalesOrderController.getSalesOrderById);
 router.put("/:id", (0, validateRequest_1.default)(salesOrder_validation_1.SalesOrderValidation.updateSalesOrderValidationSchema), salesOrder_controller_1.SalesOrderController.updateSalesOrder);
 router.patch("/:id/status", (0, validateRequest_1.default)(salesOrder_validation_1.SalesOrderValidation.updateOrderStatusValidationSchema), salesOrder_controller_1.SalesOrderController.updateOrderStatus);
+router.patch("/:id/payment", (0, validateRequest_1.default)(salesOrder_validation_1.SalesOrderValidation.updatePaymentValidationSchema), salesOrder_controller_1.SalesOrderController.updatePayment);
 router.delete("/:id", salesOrder_controller_1.SalesOrderController.deleteSalesOrder);
 exports.SalesOrderRoutes = router;
 //# sourceMappingURL=salesOrder.route.js.map

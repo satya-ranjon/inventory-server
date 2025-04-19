@@ -36,16 +36,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Customer = void 0;
 const mongoose_1 = __importStar(require("mongoose"));
 const addressSchema = new mongoose_1.Schema({
-    attention: String,
-    country: {
-        type: String,
-        required: true,
-    },
     address: {
         type: String,
         required: true,
     },
-    street2: String,
     city: {
         type: String,
         required: true,
@@ -58,94 +52,46 @@ const addressSchema = new mongoose_1.Schema({
         type: String,
         required: true,
     },
-    phone: String,
-    faxNumber: String,
-}, { _id: false });
-const primaryContactSchema = new mongoose_1.Schema({
-    salutation: String,
-    firstName: {
-        type: String,
-        required: true,
-    },
-    lastName: {
-        type: String,
-        required: true,
-    },
-}, { _id: false });
-const phoneSchema = new mongoose_1.Schema({
-    workPhone: String,
-    mobile: String,
-}, { _id: false });
-const contactPersonSchema = new mongoose_1.Schema({
-    salutation: String,
-    firstName: {
-        type: String,
-        required: true,
-    },
-    lastName: {
-        type: String,
-        required: true,
-    },
-    email: String,
-    workPhone: String,
-    mobile: String,
 }, { _id: false });
 const customerSchema = new mongoose_1.Schema({
-    customerType: {
+    customerName: {
         type: String,
-        enum: ["Business", "Individual"],
         required: true,
     },
-    primaryContact: primaryContactSchema,
-    companyName: String,
-    displayName: {
+    contactNumber: {
         type: String,
         required: true,
     },
     email: {
         type: String,
-        required: true,
-        unique: true,
+        required: function () {
+            return this.customerType === "Business";
+        },
     },
-    phone: phoneSchema,
-    billingAddress: addressSchema,
-    shippingAddress: addressSchema,
-    contactPersons: [contactPersonSchema],
-    taxId: String,
-    companyId: String,
-    currency: {
-        type: String,
-        required: true,
+    address: {
+        type: addressSchema,
+        required: function () {
+            return this.customerType === "Business";
+        },
     },
-    paymentTerms: {
+    customerType: {
         type: String,
+        enum: ["Business", "Individual"],
         required: true,
     },
-    enablePortal: {
-        type: Boolean,
-        default: false,
+    due: {
+        type: Number,
+        default: 0,
     },
-    portalLanguage: {
-        type: String,
-        default: "English",
-    },
-    customFields: {
-        type: Map,
-        of: mongoose_1.Schema.Types.Mixed,
-    },
-    reportingTags: [String],
-    remarks: String,
 }, {
     timestamps: true,
     toJSON: {
         virtuals: true,
     },
 });
-customerSchema.index({ displayName: 1 });
+customerSchema.index({ customerName: 1 });
 customerSchema.index({ email: 1 });
 customerSchema.index({ customerType: 1 });
-customerSchema.index({ "phone.mobile": 1 });
-customerSchema.index({ "phone.workPhone": 1 });
-customerSchema.index({ companyName: 1 });
+customerSchema.index({ contactNumber: 1 });
 exports.Customer = mongoose_1.default.model("Customer", customerSchema);
 //# sourceMappingURL=customer.model.js.map

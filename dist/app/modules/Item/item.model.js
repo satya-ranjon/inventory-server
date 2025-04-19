@@ -35,65 +35,31 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Item = void 0;
 const mongoose_1 = __importStar(require("mongoose"));
-const dimensionsSchema = new mongoose_1.Schema({
-    length: { type: Number },
-    width: { type: Number },
-    height: { type: Number },
-    unit: { type: String },
-}, { _id: false });
-const weightSchema = new mongoose_1.Schema({
-    value: { type: Number },
-    unit: { type: String },
-}, { _id: false });
 const itemSchema = new mongoose_1.Schema({
     name: {
         type: String,
         required: true,
         trim: true,
     },
-    sku: {
-        type: String,
-        unique: true,
-        sparse: true,
-    },
-    isReturnable: {
-        type: Boolean,
-        default: false,
-    },
-    dimensions: dimensionsSchema,
-    weight: weightSchema,
-    manufacturer: String,
-    brand: String,
-    upc: String,
-    ean: String,
-    isbn: String,
-    mpn: String,
-    sellingPrice: {
+    quantity: {
         type: Number,
         required: true,
         min: 0,
     },
-    salesAccount: {
+    warranty: {
         type: String,
+        default: null,
+    },
+    entryBy: {
+        type: mongoose_1.default.Schema.Types.ObjectId,
+        ref: "User",
         required: true,
     },
-    description: String,
-    tax: String,
-    costAccount: {
-        type: String,
+    price: {
+        type: Number,
         required: true,
-    },
-    preferredVendor: String,
-    inventoryAccount: String,
-    openingStock: {
-        type: Number,
         min: 0,
     },
-    reorderPoint: {
-        type: Number,
-        min: 0,
-    },
-    inventoryValuationMethod: String,
 }, {
     timestamps: true,
     toJSON: {
@@ -101,6 +67,5 @@ const itemSchema = new mongoose_1.Schema({
     },
 });
 itemSchema.index({ name: 1 });
-itemSchema.index({ sku: 1 });
 exports.Item = mongoose_1.default.model("Item", itemSchema);
 //# sourceMappingURL=item.model.js.map

@@ -64,30 +64,11 @@ const deleteCustomer = (0, catchAsync_1.default)(async (req, res) => {
         data: result,
     });
 });
-const addContactPerson = (0, catchAsync_1.default)(async (req, res) => {
-    const { id } = req.params;
-    const result = await customer_service_1.CustomerService.addContactPerson(id, req.body);
-    (0, sendResponse_1.default)(res, {
-        statusCode: http_status_1.default.OK,
-        success: true,
-        message: "Contact person added successfully",
-        data: result,
-    });
-});
-const updateContactPerson = (0, catchAsync_1.default)(async (req, res) => {
-    const { id, contactIndex } = req.params;
-    const result = await customer_service_1.CustomerService.updateContactPerson(id, parseInt(contactIndex), req.body);
-    (0, sendResponse_1.default)(res, {
-        statusCode: http_status_1.default.OK,
-        success: true,
-        message: "Contact person updated successfully",
-        data: result,
-    });
-});
 const getSingleCustomer = (0, catchAsync_1.default)(async (req, res) => {
     const { id } = req.params;
     const result = await customer_service_1.CustomerService.getSingleCustomer(id);
-    res.status(http_status_1.default.OK).json({
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
         success: true,
         message: "Customer retrieved successfully",
         data: result,
@@ -99,8 +80,6 @@ exports.CustomerController = {
     getCustomerById,
     updateCustomer,
     deleteCustomer,
-    addContactPerson,
-    updateContactPerson,
     getSingleCustomer,
 };
 //# sourceMappingURL=customer.controller.js.map

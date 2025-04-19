@@ -1,0 +1,66 @@
+import { z } from "zod";
+
+const addressValidationSchema = z.object({
+  address: z.string().min(1, { message: "Address is required" }),
+  city: z.string().min(1, { message: "City is required" }),
+  state: z.string().min(1, { message: "State is required" }),
+  zipCode: z.string().min(1, { message: "ZIP/Postal code is required" }),
+});
+
+const createCustomerValidationSchema = z.object({
+  body: z
+    .object({
+      customerName: z.string().min(1, { message: "Customer name is required" }),
+      contactNumber: z
+        .string()
+        .min(1, { message: "Contact number is required" }),
+      email: z.string().email().optional(),
+      address: addressValidationSchema.optional(),
+      customerType: z.enum(["Business", "Individual"]),
+    })
+    .refine(
+      (data) => {
+        if (data.customerType === "Business" && !data.email) {
+          return false;
+        }
+        return true;
+      },
+      {
+        message: "Email is required for Business customers",
+        path: ["email"],
+      }
+    )
+    .refine(
+      (data) => {
+        if (data.customerType === "Business" && !data.address) {
+          return false;
+        }
+        return true;
+      },
+      {
+        message: "Address is required for Business customers",
+        path: ["address"],
+      }
+    ),
+});
+
+const updateCustomerValidationSchema = z.object({
+  body: z.object({
+    customerName: z
+      .string()
+      .min(1, { message: "Customer name is required" })
+      .optional(),
+    contactNumber: z
+      .string()
+      .min(1, { message: "Contact number is required" })
+      .optional(),
+    email: z.string().email().optional(),
+    address: addressValidationSchema.optional(),
+    customerType: z.enum(["Business", "Individual"]).optional(),
+  }),
+});
+
+export const CustomerValidation = {
+  createCustomerValidationSchema,
+  updateCustomerValidationSchema,
+};

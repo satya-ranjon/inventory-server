@@ -11,6 +11,8 @@ exports.salesOrderFilterableFields = [
     "toDate",
     "minAmount",
     "maxAmount",
+    "payment",
+    "due",
 ];
 exports.orderStatusValues = [
     "Draft",

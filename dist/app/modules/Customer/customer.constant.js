@@ -2,20 +2,15 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.customerFilterableFields = exports.customerSearchableFields = void 0;
 exports.customerSearchableFields = [
-    "displayName",
+    "customerName",
     "email",
-    "companyName",
-    "primaryContact.firstName",
-    "primaryContact.lastName",
-    "phone.mobile",
-    "phone.workPhone",
+    "contactNumber",
 ];
 exports.customerFilterableFields = [
     "searchTerm",
     "customerType",
     "email",
-    "phone.workPhone",
-    "phone.mobile",
-    "companyName",
+    "contactNumber",
+    "due",
 ];
 //# sourceMappingURL=customer.constant.js.map

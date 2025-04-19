@@ -43,15 +43,19 @@ const createSalesOrder = async (payload) => {
             if (!itemDoc) {
                 throw new AppError_1.default(http_status_1.default.NOT_FOUND, `Item not found: ${item.item}`);
             }
-            if (item.quantity > (itemDoc.openingStock || 0)) {
-                throw new AppError_1.default(http_status_1.default.BAD_REQUEST, `Not enough stock for item: ${itemDoc.name}. Available: ${itemDoc.openingStock || 0}, Requested: ${item.quantity}`);
+            if (item.quantity > (itemDoc.quantity || 0)) {
+                throw new AppError_1.default(http_status_1.default.BAD_REQUEST, `Not enough stock for item: ${itemDoc.name}. Available: ${itemDoc.quantity || 0}, Requested: ${item.quantity}`);
             }
             const amount = item.amount || item.quantity * item.rate;
+            let finalAmount = amount;
+            if (item.discount && item.discount > 0) {
+                finalAmount = amount - item.discount;
+            }
             processedItems.push({
                 ...item,
-                amount,
+                amount: finalAmount,
             });
-            await item_model_1.Item.findByIdAndUpdate(item.item, { $inc: { openingStock: -item.quantity } }, { session });
+            await item_model_1.Item.findByIdAndUpdate(item.item, { $inc: { quantity: -item.quantity } }, { session });
         }
         if (!payload.orderNumber) {
             payload.orderNumber = await generateOrderNumber();
@@ -78,8 +82,11 @@ const createSalesOrder = async (payload) => {
             subTotal,
             total,
             status: payload.status || "Draft",
+            payment: payload.payment || 0,
+            due: payload.payment ? total - payload.payment : total,
         };
         const salesOrder = await salesOrder_model_1.SalesOrder.create([newOrder], { session });
+        await customer_model_1.Customer.findByIdAndUpdate(payload.customer, { $inc: { due: newOrder.due } }, { session });
         await session.commitTransaction();
         session.endSession();
         return salesOrder_model_1.SalesOrder.findById(salesOrder[0]._id)
@@ -92,8 +99,161 @@ const createSalesOrder = async (payload) => {
         throw error;
     }
 };
+const updateSalesOrder = async (id, payload) => {
+    const session = await mongoose_1.default.startSession();
+    session.startTransaction();
+    try {
+        const existingSalesOrder = await salesOrder_model_1.SalesOrder.findById(id).session(session);
+        if (!existingSalesOrder) {
+            throw new AppError_1.default(http_status_1.default.NOT_FOUND, "Sales order not found");
+        }
+        const originalDue = existingSalesOrder.due || 0;
+        if (payload.items && payload.items.length > 0) {
+            const processedItems = [];
+            for (const item of existingSalesOrder.items) {
+                await item_model_1.Item.findByIdAndUpdate(item.item, { $inc: { quantity: item.quantity } }, { session });
+            }
+            for (const item of payload.items) {
+                const itemDoc = await item_model_1.Item.findById(item.item).session(session);
+                if (!itemDoc) {
+                    throw new AppError_1.default(http_status_1.default.NOT_FOUND, `Item not found: ${item.item}`);
+                }
+                if (item.quantity > (itemDoc.quantity || 0)) {
+                    throw new AppError_1.default(http_status_1.default.BAD_REQUEST, `Not enough stock for item: ${itemDoc.name}. Available: ${itemDoc.quantity || 0}, Requested: ${item.quantity}`);
+                }
+                const amount = item.amount || item.quantity * item.rate;
+                let finalAmount = amount;
+                if (item.discount && item.discount > 0) {
+                    finalAmount = amount - item.discount;
+                }
+                processedItems.push({
+                    ...item,
+                    amount: finalAmount,
+                });
+                await item_model_1.Item.findByIdAndUpdate(item.item, { $inc: { quantity: -item.quantity } }, { session });
+            }
+            const subTotal = processedItems.reduce((sum, item) => sum + item.amount, 0);
+            let total = subTotal;
+            if (payload.discount) {
+                if (payload.discount.type === "percentage") {
+                    total -= (total * payload.discount.value) / 100;
+                }
+                else {
+                    total -= payload.discount.value;
+                }
+            }
+            else if (existingSalesOrder.discount) {
+                if (existingSalesOrder.discount.type === "percentage") {
+                    total -= (total * existingSalesOrder.discount.value) / 100;
+                }
+                else {
+                    total -= existingSalesOrder.discount.value;
+                }
+            }
+            if (payload.shippingCharges !== undefined) {
+                total += payload.shippingCharges;
+            }
+            else if (existingSalesOrder.shippingCharges) {
+                total += existingSalesOrder.shippingCharges;
+            }
+            if (payload.adjustment !== undefined) {
+                total += payload.adjustment;
+            }
+            else if (existingSalesOrder.adjustment) {
+                total += existingSalesOrder.adjustment;
+            }
+            payload.items = processedItems;
+            payload.subTotal = subTotal;
+            payload.total = total;
+            if (payload.payment !== undefined) {
+                payload.due = total - payload.payment;
+            }
+            else if (existingSalesOrder.payment) {
+                payload.due = total - existingSalesOrder.payment;
+            }
+            else {
+                payload.due = total;
+            }
+        }
+        else if (payload.payment !== undefined) {
+            const currentTotal = existingSalesOrder.total;
+            payload.due = currentTotal - payload.payment;
+        }
+        const updatedSalesOrder = await salesOrder_model_1.SalesOrder.findByIdAndUpdate(id, payload, {
+            new: true,
+            runValidators: true,
+            session,
+        });
+        const dueDifference = ((updatedSalesOrder === null || updatedSalesOrder === void 0 ? void 0 : updatedSalesOrder.due) || 0) - originalDue;
+        if (dueDifference !== 0) {
+            await customer_model_1.Customer.findByIdAndUpdate(existingSalesOrder.customer, { $inc: { due: dueDifference } }, { session });
+        }
+        await session.commitTransaction();
+        session.endSession();
+        return salesOrder_model_1.SalesOrder.findById(updatedSalesOrder === null || updatedSalesOrder === void 0 ? void 0 : updatedSalesOrder._id)
+            .populate("customer")
+            .populate("items.item");
+    }
+    catch (error) {
+        await session.abortTransaction();
+        session.endSession();
+        throw error;
+    }
+};
+const updateOrderStatus = async (id, status) => {
+    const session = await mongoose_1.default.startSession();
+    session.startTransaction();
+    try {
+        const salesOrder = await salesOrder_model_1.SalesOrder.findById(id).session(session);
+        if (!salesOrder) {
+            throw new AppError_1.default(http_status_1.default.NOT_FOUND, "Sales order not found");
+        }
+        if (status === "Cancelled" && salesOrder.status !== "Cancelled") {
+            for (const item of salesOrder.items) {
+                await item_model_1.Item.findByIdAndUpdate(item.item, { $inc: { quantity: item.quantity } }, { session });
+            }
+            if (salesOrder.due && salesOrder.due > 0) {
+                await customer_model_1.Customer.findByIdAndUpdate(salesOrder.customer, { $inc: { due: -salesOrder.due } }, { session });
+            }
+        }
+        const result = await salesOrder_model_1.SalesOrder.findByIdAndUpdate(id, { status }, { new: true, runValidators: true, session });
+        await session.commitTransaction();
+        session.endSession();
+        return result;
+    }
+    catch (error) {
+        await session.abortTransaction();
+        session.endSession();
+        throw error;
+    }
+};
+const deleteSalesOrder = async (id) => {
+    const session = await mongoose_1.default.startSession();
+    session.startTransaction();
+    try {
+        const salesOrder = await salesOrder_model_1.SalesOrder.findById(id).session(session);
+        if (!salesOrder) {
+            throw new AppError_1.default(http_status_1.default.NOT_FOUND, "Sales order not found");
+        }
+        for (const item of salesOrder.items) {
+            await item_model_1.Item.findByIdAndUpdate(item.item, { $inc: { quantity: item.quantity } }, { session });
+        }
+        if (salesOrder.due && salesOrder.due > 0) {
+            await customer_model_1.Customer.findByIdAndUpdate(salesOrder.customer, { $inc: { due: -salesOrder.due } }, { session });
+        }
+        await salesOrder_model_1.SalesOrder.findByIdAndDelete(id).session(session);
+        await session.commitTransaction();
+        session.endSession();
+        return { success: true };
+    }
+    catch (error) {
+        await session.abortTransaction();
+        session.endSession();
+        throw error;
+    }
+};
 const getAllSalesOrders = async (filters) => {
-    const { searchTerm, fromDate, toDate, minAmount, maxAmount, ...filterData } = filters;
+    const { searchTerm, fromDate, toDate, minAmount, maxAmount, payment, due, ...filterData } = filters;
     const andConditions = [];
     if (searchTerm) {
         andConditions.push({
@@ -132,6 +292,12 @@ const getAllSalesOrders = async (filters) => {
         }
         andConditions.push({ total: amountFilter });
     }
+    if (payment !== undefined) {
+        andConditions.push({ payment });
+    }
+    if (due !== undefined) {
+        andConditions.push({ due });
+    }
     const whereConditions = andConditions.length > 0 ? { $and: andConditions } : {};
     const salesOrderQuery = salesOrder_model_1.SalesOrder.find(whereConditions)
         .populate("customer", "displayName email")
@@ -160,127 +326,6 @@ const getSalesOrderById = async (id) => {
         throw new AppError_1.default(http_status_1.default.NOT_FOUND, "Sales order not found");
     }
     return result;
-};
-const updateSalesOrder = async (id, payload) => {
-    const session = await mongoose_1.default.startSession();
-    session.startTransaction();
-    try {
-        const originalOrder = await salesOrder_model_1.SalesOrder.findById(id).session(session);
-        if (!originalOrder) {
-            throw new AppError_1.default(http_status_1.default.NOT_FOUND, "Sales order not found");
-        }
-        if (originalOrder.status === "Delivered" ||
-            originalOrder.status === "Cancelled") {
-            throw new AppError_1.default(http_status_1.default.BAD_REQUEST, `Cannot update order with status: ${originalOrder.status}`);
-        }
-        if (payload.items) {
-            for (const item of originalOrder.items) {
-                await item_model_1.Item.findByIdAndUpdate(item.item, { $inc: { openingStock: item.quantity } }, { session });
-            }
-            const processedItems = [];
-            for (const item of payload.items) {
-                const itemDoc = await item_model_1.Item.findById(item.item).session(session);
-                if (!itemDoc) {
-                    throw new AppError_1.default(http_status_1.default.NOT_FOUND, `Item not found: ${item.item}`);
-                }
-                if (item.quantity > (itemDoc.openingStock || 0)) {
-                    throw new AppError_1.default(http_status_1.default.BAD_REQUEST, `Not enough stock for item: ${itemDoc.name}. Available: ${itemDoc.openingStock || 0}, Requested: ${item.quantity}`);
-                }
-                const amount = item.amount || item.quantity * item.rate;
-                processedItems.push({
-                    ...item,
-                    amount,
-                });
-                await item_model_1.Item.findByIdAndUpdate(item.item, { $inc: { openingStock: -item.quantity } }, { session });
-            }
-            payload.items = processedItems;
-            payload.subTotal = processedItems.reduce((sum, item) => sum + item.amount, 0);
-            let total = payload.subTotal;
-            const discount = payload.discount || originalOrder.discount;
-            if (discount) {
-                if (discount.type === "percentage") {
-                    total -= (total * discount.value) / 100;
-                }
-                else {
-                    total -= discount.value;
-                }
-            }
-            const shippingCharges = payload.shippingCharges !== undefined
-                ? payload.shippingCharges
-                : originalOrder.shippingCharges;
-            if (shippingCharges) {
-                total += shippingCharges;
-            }
-            const adjustment = payload.adjustment !== undefined
-                ? payload.adjustment
-                : originalOrder.adjustment;
-            if (adjustment) {
-                total += adjustment;
-            }
-            payload.total = total;
-        }
-        const result = await salesOrder_model_1.SalesOrder.findByIdAndUpdate(id, payload, {
-            new: true,
-            runValidators: true,
-            session,
-        })
-            .populate("customer", "displayName email")
-            .populate("items.item", "name sku");
-        await session.commitTransaction();
-        session.endSession();
-        return result;
-    }
-    catch (error) {
-        await session.abortTransaction();
-        session.endSession();
-        throw error;
-    }
-};
-const updateOrderStatus = async (id, status) => {
-    const session = await mongoose_1.default.startSession();
-    session.startTransaction();
-    try {
-        const salesOrder = await salesOrder_model_1.SalesOrder.findById(id).session(session);
-        if (!salesOrder) {
-            throw new AppError_1.default(http_status_1.default.NOT_FOUND, "Sales order not found");
-        }
-        if (status === "Cancelled" && salesOrder.status !== "Cancelled") {
-            for (const item of salesOrder.items) {
-                await item_model_1.Item.findByIdAndUpdate(item.item, { $inc: { openingStock: item.quantity } }, { session });
-            }
-        }
-        const result = await salesOrder_model_1.SalesOrder.findByIdAndUpdate(id, { status }, { new: true, runValidators: true, session });
-        await session.commitTransaction();
-        session.endSession();
-        return result;
-    }
-    catch (error) {
-        await session.abortTransaction();
-        session.endSession();
-        throw error;
-    }
-};
-const deleteSalesOrder = async (id) => {
-    const session = await mongoose_1.default.startSession();
-    session.startTransaction();
-    try {
-        const salesOrder = await salesOrder_model_1.SalesOrder.findById(id).session(session);
-        if (!salesOrder) {
-            throw new AppError_1.default(http_status_1.default.NOT_FOUND, "Sales order not found");
-        }
-        for (const item of salesOrder.items) {
-            await item_model_1.Item.findByIdAndUpdate(item.item, { $inc: { openingStock: item.quantity } }, { session });
-        }
-        await salesOrder_model_1.SalesOrder.findByIdAndDelete(id).session(session);
-        await session.commitTransaction();
-        session.endSession();
-        return { success: true };
-    }
-    catch (error) {
-        await session.abortTransaction();
-        session.endSession();
-        throw error;
-    }
 };
 const getSingleSalesOrder = async (id) => {
     if (!(0, mongoose_2.isValidObjectId)(id)) {

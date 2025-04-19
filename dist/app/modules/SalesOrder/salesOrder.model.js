@@ -56,6 +56,10 @@ const orderItemSchema = new mongoose_1.Schema({
         required: true,
         min: 0,
     },
+    discount: {
+        type: Number,
+        min: 0,
+    },
 }, { _id: false });
 const discountSchema = new mongoose_1.Schema({
     type: {
@@ -67,16 +71,6 @@ const discountSchema = new mongoose_1.Schema({
         type: Number,
         required: true,
         min: 0,
-    },
-}, { _id: false });
-const attachmentSchema = new mongoose_1.Schema({
-    fileName: {
-        type: String,
-        required: true,
-    },
-    fileUrl: {
-        type: String,
-        required: true,
     },
 }, { _id: false });
 const salesOrderSchema = new mongoose_1.Schema({
@@ -96,7 +90,6 @@ const salesOrderSchema = new mongoose_1.Schema({
         required: true,
         default: Date.now,
     },
-    expectedShipmentDate: Date,
     paymentTerms: {
         type: String,
         required: true,
@@ -127,7 +120,15 @@ const salesOrderSchema = new mongoose_1.Schema({
         enum: ["Draft", "Confirmed", "Shipped", "Delivered", "Cancelled"],
         default: "Draft",
     },
-    attachments: [attachmentSchema],
+    payment: {
+        type: Number,
+        default: 0,
+        min: 0,
+    },
+    due: {
+        type: Number,
+        min: 0,
+    },
 }, {
     timestamps: true,
     toJSON: {
@@ -158,6 +159,12 @@ salesOrderSchema.pre("save", function (next) {
         total += salesOrder.adjustment;
     }
     salesOrder.total = total;
+    if (salesOrder.payment !== undefined) {
+        salesOrder.due = total - salesOrder.payment;
+    }
+    else {
+        salesOrder.due = total;
+    }
     next();
 });
 exports.SalesOrder = mongoose_1.default.model("SalesOrder", salesOrderSchema);

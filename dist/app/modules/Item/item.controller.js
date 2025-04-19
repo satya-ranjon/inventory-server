@@ -11,7 +11,10 @@ const http_status_1 = __importDefault(require("http-status"));
 const item_constant_1 = require("./item.constant");
 const pick_1 = __importDefault(require("../../utils/pick"));
 const createItem = (0, catchAsync_1.default)(async (req, res) => {
-    const result = await item_service_1.ItemService.createItem(req.body);
+    const result = await item_service_1.ItemService.createItem({
+        ...req.body,
+        entryBy: req.user._id,
+    });
     (0, sendResponse_1.default)(res, {
         statusCode: http_status_1.default.CREATED,
         success: true,
@@ -84,15 +87,6 @@ const updateInventory = (0, catchAsync_1.default)(async (req, res) => {
         data: result,
     });
 });
-const getLowStockItems = (0, catchAsync_1.default)(async (_req, res) => {
-    const result = await item_service_1.ItemService.getLowStockItems();
-    (0, sendResponse_1.default)(res, {
-        statusCode: http_status_1.default.OK,
-        success: true,
-        message: "Low stock items retrieved successfully",
-        data: result,
-    });
-});
 exports.ItemController = {
     createItem,
     getAllItems,
@@ -101,6 +95,5 @@ exports.ItemController = {
     updateItem,
     deleteItem,
     updateInventory,
-    getLowStockItems,
 };
 //# sourceMappingURL=item.controller.js.map

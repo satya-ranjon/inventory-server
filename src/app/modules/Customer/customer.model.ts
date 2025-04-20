@@ -1,28 +1,6 @@
 import mongoose, { Schema } from "mongoose";
 import { ICustomer, TCustomerModel } from "./customer.interface";
 
-const addressSchema = new Schema(
-  {
-    address: {
-      type: String,
-      required: true,
-    },
-    city: {
-      type: String,
-      required: true,
-    },
-    state: {
-      type: String,
-      required: true,
-    },
-    zipCode: {
-      type: String,
-      required: true,
-    },
-  },
-  { _id: false }
-);
-
 const customerSchema = new Schema<ICustomer>(
   {
     customerName: {
@@ -40,7 +18,7 @@ const customerSchema = new Schema<ICustomer>(
       },
     },
     address: {
-      type: addressSchema,
+      type: String,
       required: function () {
         return this.customerType === "Business";
       },

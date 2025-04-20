@@ -1,12 +1,5 @@
 import { z } from "zod";
 
-const addressValidationSchema = z.object({
-  address: z.string().min(1, { message: "Address is required" }),
-  city: z.string().min(1, { message: "City is required" }),
-  state: z.string().min(1, { message: "State is required" }),
-  zipCode: z.string().min(1, { message: "ZIP/Postal code is required" }),
-});
-
 const createCustomerValidationSchema = z.object({
   body: z
     .object({
@@ -56,7 +49,7 @@ const updateCustomerValidationSchema = z.object({
       .min(1, { message: "Contact number is required" })
       .optional(),
     email: z.string().email().optional(),
-    address: addressValidationSchema.optional(),
+    address: z.string().optional(),
     customerType: z.enum(["Business", "Individual"]).optional(),
     due: z.number().optional(),
   }),

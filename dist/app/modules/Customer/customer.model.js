@@ -35,24 +35,6 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Customer = void 0;
 const mongoose_1 = __importStar(require("mongoose"));
-const addressSchema = new mongoose_1.Schema({
-    address: {
-        type: String,
-        required: true,
-    },
-    city: {
-        type: String,
-        required: true,
-    },
-    state: {
-        type: String,
-        required: true,
-    },
-    zipCode: {
-        type: String,
-        required: true,
-    },
-}, { _id: false });
 const customerSchema = new mongoose_1.Schema({
     customerName: {
         type: String,
@@ -69,7 +51,7 @@ const customerSchema = new mongoose_1.Schema({
         },
     },
     address: {
-        type: addressSchema,
+        type: String,
         required: function () {
             return this.customerType === "Business";
         },

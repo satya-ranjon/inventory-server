@@ -119,7 +119,7 @@ const createSalesOrder = async (payload: TSalesOrder) => {
       total,
       status: payload.status || "Draft",
       payment: payload.payment || 0,
-      due: payload.payment ? total - payload.payment : total,
+      due: payload.due || 0,
     };
 
     const salesOrder = await SalesOrder.create([newOrder], { session });
@@ -127,7 +127,7 @@ const createSalesOrder = async (payload: TSalesOrder) => {
     // Update customer due amount
     await Customer.findByIdAndUpdate(
       payload.customer,
-      { $inc: { due: newOrder.due } },
+      { $set: { due: newOrder.due } },
       { session }
     );
 
@@ -136,7 +136,10 @@ const createSalesOrder = async (payload: TSalesOrder) => {
 
     // Return complete sales order with populated references
     return SalesOrder.findById(salesOrder[0]._id)
-      .populate("customer")
+      .populate(
+        "customer",
+        "customerName contactNumber email address customerType due"
+      )
       .populate("items.item");
   } catch (error) {
     await session.abortTransaction();
@@ -297,7 +300,10 @@ const updateSalesOrder = async (id: string, payload: Partial<TSalesOrder>) => {
 
     // Return complete sales order with populated references
     return SalesOrder.findById(updatedSalesOrder?._id)
-      .populate("customer")
+      .populate(
+        "customer",
+        "customerName contactNumber email address customerType due"
+      )
       .populate("items.item");
   } catch (error) {
     await session.abortTransaction();
@@ -471,7 +477,7 @@ const getAllSalesOrders = async (filters: TSalesOrderFilters) => {
     andConditions.length > 0 ? { $and: andConditions } : {};
 
   const salesOrderQuery = SalesOrder.find(whereConditions)
-    .populate("customer", "displayName email")
+    .populate("customer")
     .populate("items.item", "name sku");
 
   const queryBuilder = new QueryBuilder(salesOrderQuery, filters)
@@ -496,7 +502,10 @@ const getAllSalesOrders = async (filters: TSalesOrderFilters) => {
 // Get a single sales order
 const getSalesOrderById = async (id: string) => {
   const result = await SalesOrder.findById(id)
-    .populate("customer")
+    .populate(
+      "customer",
+      "customerName contactNumber email address customerType due"
+    )
     .populate("items.item");
 
   if (!result) {
@@ -511,7 +520,9 @@ const getSingleSalesOrder = async (id: string): Promise<TSalesOrder | null> => {
     throw new AppError(httpStatus.BAD_REQUEST, "Invalid sales order ID");
   }
 
-  const salesOrder = await SalesOrder.findById(id);
+  const salesOrder = await SalesOrder.findById(id)
+    .populate("customer")
+    .populate("items.item");
 
   if (!salesOrder) {
     throw new AppError(httpStatus.NOT_FOUND, "Sales order not found");

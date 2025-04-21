@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CustomerService = void 0;
 const customer_model_1 = require("./customer.model");
+const salesOrder_model_1 = require("../SalesOrder/salesOrder.model");
 const QueryBuilder_1 = __importDefault(require("../../builder/QueryBuilder"));
 const customer_constant_1 = require("./customer.constant");
 const AppError_1 = __importDefault(require("../../errors/AppError"));
@@ -52,12 +53,21 @@ const getAllCustomers = async (filters) => {
         data: result,
     };
 };
-const getCustomerById = async (id) => {
-    const result = await customer_model_1.Customer.findById(id);
-    if (!result) {
+const getCustomerWithOrders = async (id) => {
+    const customer = await customer_model_1.Customer.findById(id);
+    if (!customer) {
         throw new AppError_1.default(http_status_1.default.NOT_FOUND, "Customer not found");
     }
-    return result;
+    const orders = await salesOrder_model_1.SalesOrder.find({ customer: id })
+        .populate("items.item")
+        .sort({ salesOrderDate: -1 });
+    return {
+        customer,
+        orders,
+    };
+};
+const getCustomerById = async (id) => {
+    return getCustomerWithOrders(id);
 };
 const updateCustomer = async (id, payload) => {
     const result = await customer_model_1.Customer.findByIdAndUpdate(id, payload, {
@@ -80,11 +90,7 @@ const getSingleCustomer = async (id) => {
     if (!(0, mongoose_1.isValidObjectId)(id)) {
         throw new AppError_1.default(http_status_1.default.BAD_REQUEST, "Invalid customer ID");
     }
-    const customer = await customer_model_1.Customer.findById(id);
-    if (!customer) {
-        throw new AppError_1.default(http_status_1.default.NOT_FOUND, "Customer not found");
-    }
-    return customer;
+    return getCustomerWithOrders(id);
 };
 exports.CustomerService = {
     createCustomer,

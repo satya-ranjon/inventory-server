@@ -4,7 +4,7 @@ import sendResponse from "../../utils/sendResponse";
 import { DashboardService } from "./dashboard.service";
 
 // Get dashboard data
-const getDashboardData = catchAsync(async (req: Request, res: Response) => {
+const getDashboardData = catchAsync(async (_req: Request, res: Response) => {
   const result = await DashboardService.getDashboardData();
 
   sendResponse(res, {

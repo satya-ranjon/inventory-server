@@ -13,6 +13,7 @@ const itemRoutes_1 = __importDefault(require("./app/routes/itemRoutes"));
 const customerRoutes_1 = __importDefault(require("./app/routes/customerRoutes"));
 const salesOrderRoutes_1 = __importDefault(require("./app/routes/salesOrderRoutes"));
 const authRoutes_1 = __importDefault(require("./app/routes/authRoutes"));
+const dashboardRoutes_1 = __importDefault(require("./app/routes/dashboardRoutes"));
 const globalErrorhandler_1 = __importDefault(require("./app/middlewares/globalErrorhandler"));
 const notFound_1 = __importDefault(require("./app/middlewares/notFound"));
 dotenv_1.default.config();
@@ -27,6 +28,7 @@ app.use("/api/auth", authRoutes_1.default);
 app.use("/api/items", itemRoutes_1.default);
 app.use("/api/customers", customerRoutes_1.default);
 app.use("/api/sales-orders", salesOrderRoutes_1.default);
+app.use("/api/dashboard", dashboardRoutes_1.default);
 app.get("/", (_, res) => {
     res.json({ message: "Welcome to the Inventory Management API" });
 });

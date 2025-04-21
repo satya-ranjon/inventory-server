@@ -1,4 +1,3 @@
-import mongoose from "mongoose";
 import { SalesOrder } from "../SalesOrder/salesOrder.model";
 import { Customer } from "../Customer/customer.model";
 import { Item } from "../Item/item.model";

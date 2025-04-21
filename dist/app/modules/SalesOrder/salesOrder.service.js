@@ -43,9 +43,6 @@ const createSalesOrder = async (payload) => {
             if (!itemDoc) {
                 throw new AppError_1.default(http_status_1.default.NOT_FOUND, `Item not found: ${item.item}`);
             }
-            if (item.quantity > (itemDoc.quantity || 0)) {
-                throw new AppError_1.default(http_status_1.default.BAD_REQUEST, `Not enough stock for item: ${itemDoc.name}. Available: ${itemDoc.quantity || 0}, Requested: ${item.quantity}`);
-            }
             const amount = item.amount || item.quantity * item.rate;
             let finalAmount = amount;
             if (item.discount && item.discount > 0) {
@@ -83,14 +80,14 @@ const createSalesOrder = async (payload) => {
             total,
             status: payload.status || "Draft",
             payment: payload.payment || 0,
-            due: payload.payment ? total - payload.payment : total,
+            due: payload.due || 0,
         };
         const salesOrder = await salesOrder_model_1.SalesOrder.create([newOrder], { session });
-        await customer_model_1.Customer.findByIdAndUpdate(payload.customer, { $inc: { due: newOrder.due } }, { session });
+        await customer_model_1.Customer.findByIdAndUpdate(payload.customer, { $set: { due: newOrder.due } }, { session });
         await session.commitTransaction();
         session.endSession();
         return salesOrder_model_1.SalesOrder.findById(salesOrder[0]._id)
-            .populate("customer")
+            .populate("customer", "customerName contactNumber email address customerType due")
             .populate("items.item");
     }
     catch (error) {
@@ -191,7 +188,7 @@ const updateSalesOrder = async (id, payload) => {
         await session.commitTransaction();
         session.endSession();
         return salesOrder_model_1.SalesOrder.findById(updatedSalesOrder === null || updatedSalesOrder === void 0 ? void 0 : updatedSalesOrder._id)
-            .populate("customer")
+            .populate("customer", "customerName contactNumber email address customerType due")
             .populate("items.item");
     }
     catch (error) {
@@ -300,7 +297,7 @@ const getAllSalesOrders = async (filters) => {
     }
     const whereConditions = andConditions.length > 0 ? { $and: andConditions } : {};
     const salesOrderQuery = salesOrder_model_1.SalesOrder.find(whereConditions)
-        .populate("customer", "displayName email")
+        .populate("customer")
         .populate("items.item", "name sku");
     const queryBuilder = new QueryBuilder_1.default(salesOrderQuery, filters)
         .filter()
@@ -320,7 +317,7 @@ const getAllSalesOrders = async (filters) => {
 };
 const getSalesOrderById = async (id) => {
     const result = await salesOrder_model_1.SalesOrder.findById(id)
-        .populate("customer")
+        .populate("customer", "customerName contactNumber email address customerType due")
         .populate("items.item");
     if (!result) {
         throw new AppError_1.default(http_status_1.default.NOT_FOUND, "Sales order not found");
@@ -331,7 +328,9 @@ const getSingleSalesOrder = async (id) => {
     if (!(0, mongoose_2.isValidObjectId)(id)) {
         throw new AppError_1.default(http_status_1.default.BAD_REQUEST, "Invalid sales order ID");
     }
-    const salesOrder = await salesOrder_model_1.SalesOrder.findById(id);
+    const salesOrder = await salesOrder_model_1.SalesOrder.findById(id)
+        .populate("customer")
+        .populate("items.item");
     if (!salesOrder) {
         throw new AppError_1.default(http_status_1.default.NOT_FOUND, "Sales order not found");
     }

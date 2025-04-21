@@ -1,5 +1,10 @@
-import { TCustomer, TCustomerFilters } from "./customer.interface";
+import {
+  TCustomer,
+  TCustomerFilters,
+  ICustomerWithOrders,
+} from "./customer.interface";
 import { Customer } from "./customer.model";
+import { SalesOrder } from "../SalesOrder/salesOrder.model";
 import QueryBuilder from "../../builder/QueryBuilder";
 import { customerSearchableFields } from "./customer.constant";
 import AppError from "../../errors/AppError";
@@ -59,14 +64,28 @@ const getAllCustomers = async (filters: TCustomerFilters) => {
   };
 };
 
-const getCustomerById = async (id: string) => {
-  const result = await Customer.findById(id);
+// Reusable function to fetch customer with orders
+const getCustomerWithOrders = async (
+  id: string
+): Promise<ICustomerWithOrders> => {
+  const customer = await Customer.findById(id);
 
-  if (!result) {
+  if (!customer) {
     throw new AppError(httpStatus.NOT_FOUND, "Customer not found");
   }
 
-  return result;
+  const orders = await SalesOrder.find({ customer: id })
+    .populate("items.item")
+    .sort({ salesOrderDate: -1 });
+
+  return {
+    customer,
+    orders,
+  };
+};
+
+const getCustomerById = async (id: string): Promise<ICustomerWithOrders> => {
+  return getCustomerWithOrders(id);
 };
 
 const updateCustomer = async (id: string, payload: Partial<TCustomer>) => {
@@ -92,18 +111,12 @@ const deleteCustomer = async (id: string) => {
   return result;
 };
 
-const getSingleCustomer = async (id: string): Promise<TCustomer | null> => {
+const getSingleCustomer = async (id: string): Promise<ICustomerWithOrders> => {
   if (!isValidObjectId(id)) {
     throw new AppError(httpStatus.BAD_REQUEST, "Invalid customer ID");
   }
 
-  const customer = await Customer.findById(id);
-
-  if (!customer) {
-    throw new AppError(httpStatus.NOT_FOUND, "Customer not found");
-  }
-
-  return customer;
+  return getCustomerWithOrders(id);
 };
 
 export const CustomerService = {

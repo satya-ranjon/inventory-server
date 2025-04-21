@@ -63,16 +63,6 @@ const createSalesOrder = async (payload: TSalesOrder) => {
         );
       }
 
-      // Check inventory - removed type check
-      if (item.quantity > (itemDoc.quantity || 0)) {
-        throw new AppError(
-          httpStatus.BAD_REQUEST,
-          `Not enough stock for item: ${itemDoc.name}. Available: ${
-            itemDoc.quantity || 0
-          }, Requested: ${item.quantity}`
-        );
-      }
-
       // Calculate amount if not provided
       const amount = item.amount || item.quantity * item.rate;
 

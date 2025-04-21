@@ -8,6 +8,7 @@ import itemRoutes from "./app/routes/itemRoutes";
 import customerRoutes from "./app/routes/customerRoutes";
 import salesOrderRoutes from "./app/routes/salesOrderRoutes";
 import authRoutes from "./app/routes/authRoutes";
+import dashboardRoutes from "./app/routes/dashboardRoutes";
 import globalErrorHandler from "./app/middlewares/globalErrorhandler";
 import notFound from "./app/middlewares/notFound";
 
@@ -32,6 +33,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/items", itemRoutes);
 app.use("/api/customers", customerRoutes);
 app.use("/api/sales-orders", salesOrderRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 // Base route
 app.get("/", (_, res) => {

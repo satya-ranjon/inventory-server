@@ -1,4 +1,5 @@
 import { Model, Document } from "mongoose";
+import { ISalesOrder } from "../SalesOrder/salesOrder.interface";
 
 export type TCustomerType = "Business" | "Individual";
 
@@ -24,3 +25,9 @@ export type TCustomerFilters = {
   email?: string;
   contactNumber?: string;
 };
+
+// Response interface for customer with orders
+export interface ICustomerWithOrders {
+  customer: ICustomer;
+  orders: ISalesOrder[];
+}

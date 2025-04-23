@@ -13,7 +13,7 @@ const orderItemValidationSchema = zod_1.z.object({
 });
 const discountValidationSchema = zod_1.z.object({
     type: zod_1.z.enum(["percentage", "amount"]),
-    value: zod_1.z.number().nonnegative(),
+    value: zod_1.z.number().nonnegative().optional(),
 });
 const createSalesOrderValidationSchema = zod_1.z.object({
     body: zod_1.z.object({

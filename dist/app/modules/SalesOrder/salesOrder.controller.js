@@ -26,12 +26,7 @@ const getAllSalesOrders = (0, catchAsync_1.default)(async (req, res) => {
         statusCode: http_status_1.default.OK,
         success: true,
         message: "Sales orders retrieved successfully",
-        meta: {
-            page: Number(result.meta.page),
-            limit: Number(result.meta.limit),
-            total: result.meta.total,
-        },
-        data: result.data,
+        data: result,
     });
 });
 const getSalesOrderById = (0, catchAsync_1.default)(async (req, res) => {

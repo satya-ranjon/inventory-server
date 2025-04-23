@@ -12,7 +12,12 @@ exports.salesOrderFilterableFields = [
     "minAmount",
     "maxAmount",
     "payment",
+    "previousDue",
     "due",
+    "page",
+    "limit",
+    "sort",
+    "fields",
 ];
 exports.orderStatusValues = [
     "Draft",

@@ -30,6 +30,7 @@ const generateOrderNumber = async () => {
     return `${prefix}${year}${month}${numberStr}`;
 };
 const createSalesOrder = async (payload) => {
+    console.log(payload);
     const session = await mongoose_1.default.startSession();
     session.startTransaction();
     try {
@@ -37,6 +38,7 @@ const createSalesOrder = async (payload) => {
         if (!customer) {
             throw new AppError_1.default(http_status_1.default.NOT_FOUND, "Customer not found");
         }
+        const previousDue = customer.due || 0;
         const processedItems = [];
         for (const item of payload.items) {
             const itemDoc = await item_model_1.Item.findById(item.item).session(session);
@@ -80,7 +82,8 @@ const createSalesOrder = async (payload) => {
             total,
             status: payload.status || "Draft",
             payment: payload.payment || 0,
-            due: payload.due || 0,
+            previousDue: previousDue,
+            due: total - (payload.payment || 0) + previousDue,
         };
         const salesOrder = await salesOrder_model_1.SalesOrder.create([newOrder], { session });
         await customer_model_1.Customer.findByIdAndUpdate(payload.customer, { $set: { due: newOrder.due } }, { session });
@@ -105,6 +108,10 @@ const updateSalesOrder = async (id, payload) => {
             throw new AppError_1.default(http_status_1.default.NOT_FOUND, "Sales order not found");
         }
         const originalDue = existingSalesOrder.due || 0;
+        const originalPreviousDue = existingSalesOrder.previousDue || 0;
+        if (payload.previousDue === undefined && originalPreviousDue > 0) {
+            payload.previousDue = originalPreviousDue;
+        }
         if (payload.items && payload.items.length > 0) {
             const processedItems = [];
             for (const item of existingSalesOrder.items) {
@@ -250,7 +257,7 @@ const deleteSalesOrder = async (id) => {
     }
 };
 const getAllSalesOrders = async (filters) => {
-    const { searchTerm, fromDate, toDate, minAmount, maxAmount, payment, due, ...filterData } = filters;
+    const { searchTerm, fromDate, toDate, minAmount, maxAmount, payment, due, page, limit, sort, fields, ...filterData } = filters;
     const andConditions = [];
     if (searchTerm) {
         andConditions.push({
@@ -296,21 +303,44 @@ const getAllSalesOrders = async (filters) => {
         andConditions.push({ due });
     }
     const whereConditions = andConditions.length > 0 ? { $and: andConditions } : {};
+    const defaultLimit = 8;
     const salesOrderQuery = salesOrder_model_1.SalesOrder.find(whereConditions)
         .populate("customer")
         .populate("items.item", "name sku");
-    const queryBuilder = new QueryBuilder_1.default(salesOrderQuery, filters)
-        .filter()
+    const queryBuilder = new QueryBuilder_1.default(salesOrderQuery, {
+        page,
+        limit: limit || defaultLimit,
+        sort,
+        fields,
+    })
         .sort()
         .paginate()
         .fields();
     const result = await queryBuilder.modelQuery;
     const total = await salesOrder_model_1.SalesOrder.countDocuments(whereConditions);
+    const totals = await salesOrder_model_1.SalesOrder.aggregate([
+        { $match: whereConditions },
+        {
+            $group: {
+                _id: null,
+                totalDue: { $sum: "$due" },
+                totalPayment: { $sum: "$payment" },
+                totalAmount: { $sum: "$total" },
+            },
+        },
+    ]).exec();
+    const totalsDue = totals.length > 0 ? totals[0].totalDue : 0;
+    const totalsPayment = totals.length > 0 ? totals[0].totalPayment : 0;
+    const totalAmount = totals.length > 0 ? totals[0].totalAmount : 0;
     return {
         meta: {
-            page: queryBuilder.query.page || 1,
-            limit: queryBuilder.query.limit || 10,
+            page: Number(page) || 1,
+            limit: Number(limit) || defaultLimit,
             total,
+            totalDue: totalsDue,
+            totalPayment: totalsPayment,
+            totalPaid: totalsPayment,
+            totalAmount: totalAmount,
         },
         data: result,
     };

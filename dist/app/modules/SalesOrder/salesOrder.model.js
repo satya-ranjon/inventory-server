@@ -125,6 +125,11 @@ const salesOrderSchema = new mongoose_1.Schema({
         default: 0,
         min: 0,
     },
+    previousDue: {
+        type: Number,
+        default: 0,
+        min: 0,
+    },
     due: {
         type: Number,
         min: 0,
@@ -161,9 +166,15 @@ salesOrderSchema.pre("save", function (next) {
     salesOrder.total = total;
     if (salesOrder.payment !== undefined) {
         salesOrder.due = total - salesOrder.payment;
+        if (salesOrder.previousDue !== undefined) {
+            salesOrder.due += salesOrder.previousDue;
+        }
     }
     else {
         salesOrder.due = total;
+        if (salesOrder.previousDue !== undefined) {
+            salesOrder.due += salesOrder.previousDue;
+        }
     }
     next();
 });

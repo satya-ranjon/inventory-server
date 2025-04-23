@@ -12,7 +12,7 @@ const orderItemValidationSchema = z.object({
 
 const discountValidationSchema = z.object({
   type: z.enum(["percentage", "amount"]),
-  value: z.number().nonnegative(),
+  value: z.number().nonnegative().optional(),
 });
 
 const createSalesOrderValidationSchema = z.object({

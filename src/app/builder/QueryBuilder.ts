@@ -34,7 +34,8 @@ class QueryBuilder<T> {
 
     excludeFields.forEach((field) => delete queryObj[field]);
 
-    this.modelQuery = this.modelQuery.find(queryObj as FilterQuery<T>);
+    // Use where instead of find to not override the existing query
+    this.modelQuery = this.modelQuery.where(queryObj as FilterQuery<T>);
 
     return this;
   }

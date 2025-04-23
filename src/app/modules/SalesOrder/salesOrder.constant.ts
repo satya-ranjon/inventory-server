@@ -12,6 +12,10 @@ export const salesOrderFilterableFields = [
   "payment",
   "previousDue",
   "due",
+  "page",
+  "limit",
+  "sort",
+  "fields",
 ];
 
 export const orderStatusValues = [

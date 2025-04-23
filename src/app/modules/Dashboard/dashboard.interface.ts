@@ -27,6 +27,11 @@ export type TSalesByStatusData = {
   total: number;
 };
 
+export type TDailySalesData = {
+  date: string;
+  amount: number;
+};
+
 export type TDashboardData = {
   totalCustomers: number;
   totalItems: number;

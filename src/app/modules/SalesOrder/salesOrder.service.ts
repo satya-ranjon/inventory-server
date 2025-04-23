@@ -426,6 +426,10 @@ const getAllSalesOrders = async (filters: TSalesOrderFilters) => {
     maxAmount,
     payment,
     due,
+    page,
+    limit,
+    sort,
+    fields,
     ...filterData
   } = filters;
 
@@ -494,10 +498,11 @@ const getAllSalesOrders = async (filters: TSalesOrderFilters) => {
     .populate("items.item", "name sku");
 
   const queryBuilder = new QueryBuilder(salesOrderQuery, {
-    ...filters,
-    limit: filters.limit || defaultLimit,
+    page,
+    limit: limit || defaultLimit,
+    sort,
+    fields,
   })
-    .filter()
     .sort()
     .paginate()
     .fields();
@@ -525,8 +530,8 @@ const getAllSalesOrders = async (filters: TSalesOrderFilters) => {
 
   return {
     meta: {
-      page: queryBuilder.query.page || 1,
-      limit: queryBuilder.query.limit || 10,
+      page: Number(page) || 1,
+      limit: Number(limit) || defaultLimit,
       total,
       totalDue: totalsDue,
       totalPayment: totalsPayment,

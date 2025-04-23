@@ -1,7 +1,7 @@
 import { SalesOrder } from "../SalesOrder/salesOrder.model";
 import { Customer } from "../Customer/customer.model";
 import { Item } from "../Item/item.model";
-import { TDashboardData } from "./dashboard.interface";
+import { TDashboardData, TDailySalesData } from "./dashboard.interface";
 
 // Get dashboard analytics data
 const getDashboardData = async (): Promise<TDashboardData> => {
@@ -24,15 +24,19 @@ const getDashboardData = async (): Promise<TDashboardData> => {
     .populate("customer", "customerName")
     .select("orderNumber customer total status salesOrderDate");
 
-  // Get sales over time (last 6 months)
-  const sixMonthsAgo = new Date();
-  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+  // Get sales over time (current month only)
+  const currentDate = new Date();
+  const startOfMonth = new Date(
+    currentDate.getFullYear(),
+    currentDate.getMonth(),
+    1
+  );
 
   const salesOverTime = await SalesOrder.aggregate([
-    { $match: { salesOrderDate: { $gte: sixMonthsAgo } } },
+    { $match: { salesOrderDate: { $gte: startOfMonth, $lte: currentDate } } },
     {
       $group: {
-        _id: { $dateToString: { format: "%Y-%m", date: "$salesOrderDate" } },
+        _id: { $dateToString: { format: "%Y-%m-%d", date: "$salesOrderDate" } },
         total: { $sum: "$total" },
       },
     },
@@ -40,8 +44,9 @@ const getDashboardData = async (): Promise<TDashboardData> => {
     { $project: { date: "$_id", total: 1, _id: 0 } },
   ]);
 
-  // Get top customers
+  // Get top customers (current month only)
   const topCustomers = await SalesOrder.aggregate([
+    { $match: { salesOrderDate: { $gte: startOfMonth, $lte: currentDate } } },
     {
       $group: {
         _id: "$customer",
@@ -72,8 +77,9 @@ const getDashboardData = async (): Promise<TDashboardData> => {
     },
   ]);
 
-  // Get top selling items
+  // Get top selling items (current month only)
   const topItems = await SalesOrder.aggregate([
+    { $match: { salesOrderDate: { $gte: startOfMonth, $lte: currentDate } } },
     { $unwind: "$items" },
     {
       $group: {
@@ -105,8 +111,9 @@ const getDashboardData = async (): Promise<TDashboardData> => {
     },
   ]);
 
-  // Get sales by status
+  // Get sales by status (current month only)
   const salesByStatus = await SalesOrder.aggregate([
+    { $match: { salesOrderDate: { $gte: startOfMonth, $lte: currentDate } } },
     {
       $group: {
         _id: "$status",
@@ -292,7 +299,61 @@ const getDashboardDataByDateRange = async (
   };
 };
 
+// Get daily sales data
+const getDailySalesData = async (): Promise<TDailySalesData[]> => {
+  // Default to last 30 days if no range specified
+  const endDate = new Date();
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - 30);
+
+  const salesData = await SalesOrder.aggregate([
+    {
+      $match: {
+        salesOrderDate: { $gte: startDate, $lte: endDate },
+        status: { $in: ["Confirmed", "Shipped", "Delivered"] },
+      },
+    },
+    {
+      $group: {
+        _id: { $dateToString: { format: "%Y-%m-%d", date: "$salesOrderDate" } },
+        amount: { $sum: "$total" },
+      },
+    },
+    { $sort: { _id: 1 } },
+    { $project: { date: "$_id", amount: 1, _id: 0 } },
+  ]);
+
+  return salesData;
+};
+
+// Get daily sales data by date range
+const getDailySalesDataByDateRange = async (
+  startDate: Date,
+  endDate: Date
+): Promise<TDailySalesData[]> => {
+  const salesData = await SalesOrder.aggregate([
+    {
+      $match: {
+        salesOrderDate: { $gte: startDate, $lte: endDate },
+        status: { $in: ["Confirmed", "Shipped", "Delivered"] },
+      },
+    },
+    {
+      $group: {
+        _id: { $dateToString: { format: "%Y-%m-%d", date: "$salesOrderDate" } },
+        amount: { $sum: "$total" },
+      },
+    },
+    { $sort: { _id: 1 } },
+    { $project: { date: "$_id", amount: 1, _id: 0 } },
+  ]);
+
+  return salesData;
+};
+
 export const DashboardService = {
   getDashboardData,
   getDashboardDataByDateRange,
+  getDailySalesData,
+  getDailySalesDataByDateRange,
 };

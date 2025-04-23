@@ -70,4 +70,7 @@ export type TSalesOrderFilters = {
   previousDue?: number;
   due?: number;
   limit?: number;
+  page?: number;
+  sort?: string;
+  fields?: string;
 };

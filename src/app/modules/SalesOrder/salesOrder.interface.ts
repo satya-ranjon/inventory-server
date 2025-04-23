@@ -42,6 +42,7 @@ export type TSalesOrder = {
 
   status: TOrderStatus;
   payment?: number;
+  previousDue?: number;
   due?: number;
 };
 
@@ -66,5 +67,7 @@ export type TSalesOrderFilters = {
   minAmount?: number;
   maxAmount?: number;
   payment?: number;
+  previousDue?: number;
   due?: number;
+  limit?: number;
 };

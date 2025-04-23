@@ -8,7 +8,6 @@ import pick from "../../utils/pick";
 
 const createSalesOrder = catchAsync(async (req: Request, res: Response) => {
   const result = await SalesOrderService.createSalesOrder(req.body);
-
   sendResponse(res, {
     statusCode: httpStatus.CREATED,
     success: true,
@@ -26,12 +25,7 @@ const getAllSalesOrders = catchAsync(async (req: Request, res: Response) => {
     statusCode: httpStatus.OK,
     success: true,
     message: "Sales orders retrieved successfully",
-    meta: {
-      page: Number(result.meta.page),
-      limit: Number(result.meta.limit),
-      total: result.meta.total,
-    },
-    data: result.data,
+    data: result,
   });
 });
 

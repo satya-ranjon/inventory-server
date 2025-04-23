@@ -10,6 +10,7 @@ export const salesOrderFilterableFields = [
   "minAmount",
   "maxAmount",
   "payment",
+  "previousDue",
   "due",
 ];
 

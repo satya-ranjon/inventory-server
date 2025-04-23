@@ -40,6 +40,7 @@ const generateOrderNumber = async (): Promise<string> => {
 
 // Create sales order
 const createSalesOrder = async (payload: TSalesOrder) => {
+  console.log(payload);
   const session = await mongoose.startSession();
   session.startTransaction();
 
@@ -49,6 +50,9 @@ const createSalesOrder = async (payload: TSalesOrder) => {
     if (!customer) {
       throw new AppError(httpStatus.NOT_FOUND, "Customer not found");
     }
+
+    // Get the customer's previous due amount
+    const previousDue = customer.due || 0;
 
     // Process items and check inventory
     const processedItems: TOrderItem[] = [];
@@ -119,7 +123,8 @@ const createSalesOrder = async (payload: TSalesOrder) => {
       total,
       status: payload.status || "Draft",
       payment: payload.payment || 0,
-      due: payload.due || 0,
+      previousDue: previousDue,
+      due: total - (payload.payment || 0) + previousDue,
     };
 
     const salesOrder = await SalesOrder.create([newOrder], { session });
@@ -162,6 +167,12 @@ const updateSalesOrder = async (id: string, payload: Partial<TSalesOrder>) => {
 
     // Store the original due amount to calculate the difference later
     const originalDue = existingSalesOrder.due || 0;
+    const originalPreviousDue = existingSalesOrder.previousDue || 0;
+
+    // If previousDue is not in the payload but exists in the original order, keep it
+    if (payload.previousDue === undefined && originalPreviousDue > 0) {
+      payload.previousDue = originalPreviousDue;
+    }
 
     // If items are being updated, process them
     if (payload.items && payload.items.length > 0) {
@@ -476,11 +487,16 @@ const getAllSalesOrders = async (filters: TSalesOrderFilters) => {
   const whereConditions =
     andConditions.length > 0 ? { $and: andConditions } : {};
 
+  const defaultLimit = 8;
+
   const salesOrderQuery = SalesOrder.find(whereConditions)
     .populate("customer")
     .populate("items.item", "name sku");
 
-  const queryBuilder = new QueryBuilder(salesOrderQuery, filters)
+  const queryBuilder = new QueryBuilder(salesOrderQuery, {
+    ...filters,
+    limit: filters.limit || defaultLimit,
+  })
     .filter()
     .sort()
     .paginate()
@@ -489,11 +505,33 @@ const getAllSalesOrders = async (filters: TSalesOrderFilters) => {
   const result = await queryBuilder.modelQuery;
   const total = await SalesOrder.countDocuments(whereConditions);
 
+  // Calculate totals using aggregation
+  const totals = await SalesOrder.aggregate([
+    { $match: whereConditions },
+    {
+      $group: {
+        _id: null,
+        totalDue: { $sum: "$due" },
+        totalPayment: { $sum: "$payment" },
+        totalAmount: { $sum: "$total" },
+      },
+    },
+  ]).exec();
+
+  // Set default values if no records found
+  const totalsDue = totals.length > 0 ? totals[0].totalDue : 0;
+  const totalsPayment = totals.length > 0 ? totals[0].totalPayment : 0;
+  const totalAmount = totals.length > 0 ? totals[0].totalAmount : 0;
+
   return {
     meta: {
       page: queryBuilder.query.page || 1,
       limit: queryBuilder.query.limit || 10,
       total,
+      totalDue: totalsDue,
+      totalPayment: totalsPayment,
+      totalPaid: totalsPayment,
+      totalAmount: totalAmount,
     },
     data: result,
   };

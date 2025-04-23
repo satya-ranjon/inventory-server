@@ -104,6 +104,11 @@ const salesOrderSchema = new Schema<ISalesOrder>(
       default: 0,
       min: 0,
     },
+    previousDue: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
     due: {
       type: Number,
       min: 0,
@@ -158,8 +163,18 @@ salesOrderSchema.pre("save", function (next) {
   // Calculate due amount
   if (salesOrder.payment !== undefined) {
     salesOrder.due = total - salesOrder.payment;
+
+    // Add previousDue to the total due if it exists
+    if (salesOrder.previousDue !== undefined) {
+      salesOrder.due += salesOrder.previousDue;
+    }
   } else {
     salesOrder.due = total;
+
+    // Add previousDue to the total due if it exists
+    if (salesOrder.previousDue !== undefined) {
+      salesOrder.due += salesOrder.previousDue;
+    }
   }
 
   next();

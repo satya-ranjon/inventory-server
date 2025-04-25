@@ -2,11 +2,14 @@ import { Model, Document } from "mongoose";
 
 export type TRole = "admin" | "manager" | "employee";
 
+export type TPermission = "item" | "customer" | "sales" | "dashboard";
+
 export type TUser = {
   name: string;
   email: string;
   password: string;
   role: TRole;
+  permissions?: TPermission[];
   isVerified?: boolean;
   isActive?: boolean;
 };
@@ -31,5 +34,13 @@ export type TLoginUserResponse = {
     email: string;
     role: string;
     name: string;
+    permissions?: TPermission[];
   };
+};
+
+export type TCreateEmployee = {
+  name: string;
+  email: string;
+  password: string;
+  permissions: TPermission[];
 };

@@ -1,5 +1,5 @@
 import { Schema, model } from "mongoose";
-import { IUser, TUserModel } from "./user.interface";
+import { IUser, TPermission, TUserModel } from "./user.interface";
 import bcrypt from "bcrypt";
 import config from "../../config";
 
@@ -23,6 +23,11 @@ const userSchema = new Schema<IUser, TUserModel>(
       type: String,
       enum: ["admin", "manager", "employee"],
       required: true,
+    },
+    permissions: {
+      type: [String],
+      enum: ["item", "customer", "sales", "dashboard"],
+      default: [],
     },
     isVerified: {
       type: Boolean,

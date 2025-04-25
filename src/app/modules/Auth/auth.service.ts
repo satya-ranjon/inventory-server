@@ -70,6 +70,7 @@ const loginUser = async (payload: TLoginUser): Promise<TLoginUserResponse> => {
       email: user.email,
       role: user.role,
       name: user.name,
+      permissions: user.permissions,
     },
   };
 };
@@ -132,8 +133,36 @@ const refreshToken = async (token: string) => {
   };
 };
 
+const changePassword = async (
+  userId: string,
+  currentPassword: string,
+  newPassword: string
+) => {
+  // Find user with password
+  const user = await User.findById(userId).select("+password");
+  if (!user) {
+    throw new AppError(httpStatus.NOT_FOUND, "User not found");
+  }
+
+  // Verify current password
+  const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+  if (!isPasswordValid) {
+    throw new AppError(
+      httpStatus.UNAUTHORIZED,
+      "Current password is incorrect"
+    );
+  }
+
+  // Update password
+  user.password = newPassword;
+  await user.save();
+
+  return { message: "Password changed successfully" };
+};
+
 export const AuthService = {
   registerUser,
   loginUser,
   refreshToken,
+  changePassword,
 };

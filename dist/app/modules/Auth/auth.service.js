@@ -50,6 +50,7 @@ const loginUser = async (payload) => {
             email: user.email,
             role: user.role,
             name: user.name,
+            permissions: user.permissions,
         },
     };
 };
@@ -85,9 +86,23 @@ const refreshToken = async (token) => {
         refreshToken: newRefreshToken,
     };
 };
+const changePassword = async (userId, currentPassword, newPassword) => {
+    const user = await user_model_1.User.findById(userId).select("+password");
+    if (!user) {
+        throw new AppError_1.default(http_status_1.default.NOT_FOUND, "User not found");
+    }
+    const isPasswordValid = await bcrypt_1.default.compare(currentPassword, user.password);
+    if (!isPasswordValid) {
+        throw new AppError_1.default(http_status_1.default.UNAUTHORIZED, "Current password is incorrect");
+    }
+    user.password = newPassword;
+    await user.save();
+    return { message: "Password changed successfully" };
+};
 exports.AuthService = {
     registerUser,
     loginUser,
     refreshToken,
+    changePassword,
 };
 //# sourceMappingURL=auth.service.js.map

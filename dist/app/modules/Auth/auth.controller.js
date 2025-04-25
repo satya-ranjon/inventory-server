@@ -36,9 +36,21 @@ const refreshToken = (0, catchAsync_1.default)(async (req, res) => {
         data: result,
     });
 });
+const changePassword = (0, catchAsync_1.default)(async (req, res) => {
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.user._id;
+    const result = await auth_service_1.AuthService.changePassword(userId, currentPassword, newPassword);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: "Password changed successfully",
+        data: result,
+    });
+});
 exports.AuthController = {
     registerUser,
     loginUser,
     refreshToken,
+    changePassword,
 };
 //# sourceMappingURL=auth.controller.js.map

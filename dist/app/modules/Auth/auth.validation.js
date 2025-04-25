@@ -41,9 +41,22 @@ const refreshTokenValidationSchema = zod_1.z.object({
         }),
     }),
 });
+const changePasswordValidationSchema = zod_1.z.object({
+    body: zod_1.z.object({
+        currentPassword: zod_1.z.string({
+            required_error: "Current password is required",
+        }),
+        newPassword: zod_1.z
+            .string({
+            required_error: "New password is required",
+        })
+            .min(6, "New password must be at least 6 characters"),
+    }),
+});
 exports.AuthValidation = {
     registerUserValidationSchema,
     loginUserValidationSchema,
     refreshTokenValidationSchema,
+    changePasswordValidationSchema,
 };
 //# sourceMappingURL=auth.validation.js.map

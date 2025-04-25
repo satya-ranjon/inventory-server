@@ -27,6 +27,11 @@ const userSchema = new mongoose_1.Schema({
         enum: ["admin", "manager", "employee"],
         required: true,
     },
+    permissions: {
+        type: [String],
+        enum: ["item", "customer", "sales", "dashboard"],
+        default: [],
+    },
     isVerified: {
         type: Boolean,
         default: false,

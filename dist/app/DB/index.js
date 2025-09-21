@@ -5,11 +5,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importDefault(require("mongoose"));
 const config_1 = __importDefault(require("../config"));
+const seeds_1 = __importDefault(require("../seeds"));
 const connectDB = async () => {
     try {
         const mongoURI = config_1.default.database_url;
         await mongoose_1.default.connect(mongoURI);
         console.log("📄 Database connection established");
+        await (0, seeds_1.default)();
         mongoose_1.default.connection.on("error", (err) => {
             console.error("Database connection error:", err);
         });

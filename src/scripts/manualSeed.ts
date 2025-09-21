@@ -6,24 +6,24 @@ const availableSeeds = {
   admin: createAdminUser,
   all: async () => {
     await createAdminUser();
-  }
+  },
 };
 
 const runSpecificSeed = async (seedName?: string): Promise<void> => {
   try {
     console.log("🌱 Starting manual seed script...");
-    
+
     // Connect to MongoDB
     const mongoURI = config.database_url as string;
     await mongoose.connect(mongoURI);
     console.log("📄 Database connection established");
 
     // Determine which seed to run
-    const seedToRun = seedName || 'all';
-    
+    const seedToRun = seedName || "all";
+
     if (!Object.keys(availableSeeds).includes(seedToRun)) {
       console.error(`❌ Invalid seed name: ${seedToRun}`);
-      console.log(`Available seeds: ${Object.keys(availableSeeds).join(', ')}`);
+      console.log(`Available seeds: ${Object.keys(availableSeeds).join(", ")}`);
       return;
     }
 

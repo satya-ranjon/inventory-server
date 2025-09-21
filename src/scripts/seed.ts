@@ -5,7 +5,7 @@ import runSeeds from "../app/seeds";
 const runSeedsScript = async (): Promise<void> => {
   try {
     console.log("🌱 Starting seed script...");
-    
+
     // Connect to MongoDB
     const mongoURI = config.database_url as string;
     await mongoose.connect(mongoURI);

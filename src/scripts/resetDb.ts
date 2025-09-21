@@ -5,7 +5,7 @@ import runSeeds from "../app/seeds";
 const resetDatabase = async (): Promise<void> => {
   try {
     console.log("🗑️  Starting database reset...");
-    
+
     // Connect to MongoDB
     const mongoURI = config.database_url as string;
     await mongoose.connect(mongoURI);
@@ -13,17 +13,17 @@ const resetDatabase = async (): Promise<void> => {
 
     // Clear all collections
     console.log("🧹 Clearing all collections...");
-    
+
     // Get all collection names
     const collections = mongoose.connection.collections;
-    
+
     for (const collection of Object.values(collections)) {
       await collection.deleteMany({});
       console.log(`✅ Cleared collection: ${collection.collectionName}`);
     }
 
     console.log("🌱 Running seeds after reset...");
-    
+
     // Run seeds to recreate initial data
     await runSeeds();
 

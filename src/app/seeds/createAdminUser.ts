@@ -5,7 +5,7 @@ const createAdminUser = async (): Promise<void> => {
   try {
     // Check if admin user already exists
     const adminExists = await User.findOne({ email: "admin@inventory.com" });
-    
+
     if (adminExists) {
       console.log("🔐 Admin user already exists");
       return;

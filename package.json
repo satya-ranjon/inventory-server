@@ -14,6 +14,8 @@
     "format": "prettier --write \"src/**/*.ts\"",
     "test": "echo \"Error: no test specified\" && exit 1",
     "seed": "ts-node src/scripts/seed.ts",
+    "seed:admin": "ts-node src/scripts/manualSeed.ts admin",
+    "seed:manual": "ts-node src/scripts/manualSeed.ts",
     "db:reset": "ts-node src/scripts/resetDb.ts"
   },
   "repository": {

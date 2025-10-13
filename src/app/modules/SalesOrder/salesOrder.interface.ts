@@ -31,7 +31,7 @@ export type TSalesOrder = {
 
   items: TOrderItem[];
 
-  subTotal: number;
+  subTotal?: number;
   discount?: TDiscount;
   shippingCharges?: number;
   adjustment?: number;

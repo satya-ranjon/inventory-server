@@ -76,7 +76,7 @@ const salesOrderSchema = new Schema<ISalesOrder>(
 
     subTotal: {
       type: Number,
-      required: true,
+      required: false,
       min: 0,
     },
     discount: discountSchema,
@@ -129,56 +129,9 @@ salesOrderSchema.index({ status: 1 });
 salesOrderSchema.index({ salesOrderDate: -1 });
 salesOrderSchema.index({ total: 1 });
 
-// Add middleware to calculate totals
-salesOrderSchema.pre("save", function (next) {
-  const salesOrder = this as unknown as ISalesOrder;
-
-  // Calculate subtotal, already accounting for item-level discounts
-  salesOrder.subTotal = salesOrder.items.reduce(
-    (sum: number, item: any) => sum + item.amount,
-    0
-  );
-
-  // Calculate total with discounts and charges
-  let total = salesOrder.subTotal;
-
-  if (salesOrder.discount) {
-    if (salesOrder.discount.type === "percentage") {
-      total -= (total * salesOrder.discount.value) / 100;
-    } else {
-      total -= salesOrder.discount.value;
-    }
-  }
-
-  if (salesOrder.shippingCharges) {
-    total += salesOrder.shippingCharges;
-  }
-
-  if (salesOrder.adjustment) {
-    total += salesOrder.adjustment;
-  }
-
-  salesOrder.total = total;
-
-  // Calculate due amount
-  if (salesOrder.payment !== undefined) {
-    salesOrder.due = total - salesOrder.payment;
-
-    // Add previousDue to the total due if it exists
-    if (salesOrder.previousDue !== undefined) {
-      salesOrder.due += salesOrder.previousDue;
-    }
-  } else {
-    salesOrder.due = total;
-
-    // Add previousDue to the total due if it exists
-    if (salesOrder.previousDue !== undefined) {
-      salesOrder.due += salesOrder.previousDue;
-    }
-  }
-
-  next();
-});
+// Note: Calculation logic has been moved to the frontend
+// The backend now accepts pre-calculated values from the frontend
+// This ensures consistency between what the user sees and what gets saved
 
 export const SalesOrder = mongoose.model<ISalesOrder, TSalesOrderModel>(
   "SalesOrder",

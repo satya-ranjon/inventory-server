@@ -99,7 +99,7 @@ const salesOrderSchema = new mongoose_1.Schema({
     items: [orderItemSchema],
     subTotal: {
         type: Number,
-        required: true,
+        required: false,
         min: 0,
     },
     discount: discountSchema,
@@ -145,38 +145,5 @@ salesOrderSchema.index({ customer: 1 });
 salesOrderSchema.index({ status: 1 });
 salesOrderSchema.index({ salesOrderDate: -1 });
 salesOrderSchema.index({ total: 1 });
-salesOrderSchema.pre("save", function (next) {
-    const salesOrder = this;
-    salesOrder.subTotal = salesOrder.items.reduce((sum, item) => sum + item.amount, 0);
-    let total = salesOrder.subTotal;
-    if (salesOrder.discount) {
-        if (salesOrder.discount.type === "percentage") {
-            total -= (total * salesOrder.discount.value) / 100;
-        }
-        else {
-            total -= salesOrder.discount.value;
-        }
-    }
-    if (salesOrder.shippingCharges) {
-        total += salesOrder.shippingCharges;
-    }
-    if (salesOrder.adjustment) {
-        total += salesOrder.adjustment;
-    }
-    salesOrder.total = total;
-    if (salesOrder.payment !== undefined) {
-        salesOrder.due = total - salesOrder.payment;
-        if (salesOrder.previousDue !== undefined) {
-            salesOrder.due += salesOrder.previousDue;
-        }
-    }
-    else {
-        salesOrder.due = total;
-        if (salesOrder.previousDue !== undefined) {
-            salesOrder.due += salesOrder.previousDue;
-        }
-    }
-    next();
-});
 exports.SalesOrder = mongoose_1.default.model("SalesOrder", salesOrderSchema);
 //# sourceMappingURL=salesOrder.model.js.map

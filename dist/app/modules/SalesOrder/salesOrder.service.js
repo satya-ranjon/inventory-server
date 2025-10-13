@@ -30,7 +30,6 @@ const generateOrderNumber = async () => {
     return `${prefix}${year}${month}${numberStr}`;
 };
 const createSalesOrder = async (payload) => {
-    console.log(payload);
     const session = await mongoose_1.default.startSession();
     session.startTransaction();
     try {
@@ -38,55 +37,29 @@ const createSalesOrder = async (payload) => {
         if (!customer) {
             throw new AppError_1.default(http_status_1.default.NOT_FOUND, "Customer not found");
         }
-        const previousDue = customer.due || 0;
-        const processedItems = [];
         for (const item of payload.items) {
             const itemDoc = await item_model_1.Item.findById(item.item).session(session);
             if (!itemDoc) {
                 throw new AppError_1.default(http_status_1.default.NOT_FOUND, `Item not found: ${item.item}`);
             }
-            const amount = item.amount || item.quantity * item.rate;
-            let finalAmount = amount;
-            if (item.discount && item.discount > 0) {
-                finalAmount = amount - item.discount;
+            if (item.quantity > (itemDoc.quantity || 0)) {
+                throw new AppError_1.default(http_status_1.default.BAD_REQUEST, `Not enough stock for item: ${itemDoc.name}. Available: ${itemDoc.quantity || 0}, Requested: ${item.quantity}`);
             }
-            processedItems.push({
-                ...item,
-                amount: finalAmount,
-            });
             await item_model_1.Item.findByIdAndUpdate(item.item, { $inc: { quantity: -item.quantity } }, { session });
         }
         if (!payload.orderNumber) {
             payload.orderNumber = await generateOrderNumber();
         }
-        const subTotal = processedItems.reduce((sum, item) => sum + item.amount, 0);
-        let total = subTotal;
-        if (payload.discount) {
-            if (payload.discount.type === "percentage") {
-                total -= (total * payload.discount.value) / 100;
-            }
-            else {
-                total -= payload.discount.value;
-            }
-        }
-        if (payload.shippingCharges) {
-            total += payload.shippingCharges;
-        }
-        if (payload.adjustment) {
-            total += payload.adjustment;
+        if (!payload.subTotal) {
+            payload.subTotal = payload.items.reduce((sum, item) => sum + (item.amount || 0), 0);
         }
         const newOrder = {
             ...payload,
-            items: processedItems,
-            subTotal,
-            total,
             status: payload.status || "Draft",
             payment: payload.payment || 0,
-            previousDue: previousDue,
-            due: total - (payload.payment || 0) + previousDue,
         };
         const salesOrder = await salesOrder_model_1.SalesOrder.create([newOrder], { session });
-        await customer_model_1.Customer.findByIdAndUpdate(payload.customer, { $set: { due: newOrder.due } }, { session });
+        await customer_model_1.Customer.findByIdAndUpdate(payload.customer, { $set: { due: newOrder.due || 0 } }, { session });
         await session.commitTransaction();
         session.endSession();
         return salesOrder_model_1.SalesOrder.findById(salesOrder[0]._id)
@@ -108,12 +81,7 @@ const updateSalesOrder = async (id, payload) => {
             throw new AppError_1.default(http_status_1.default.NOT_FOUND, "Sales order not found");
         }
         const originalDue = existingSalesOrder.due || 0;
-        const originalPreviousDue = existingSalesOrder.previousDue || 0;
-        if (payload.previousDue === undefined && originalPreviousDue > 0) {
-            payload.previousDue = originalPreviousDue;
-        }
         if (payload.items && payload.items.length > 0) {
-            const processedItems = [];
             for (const item of existingSalesOrder.items) {
                 await item_model_1.Item.findByIdAndUpdate(item.item, { $inc: { quantity: item.quantity } }, { session });
             }
@@ -125,63 +93,8 @@ const updateSalesOrder = async (id, payload) => {
                 if (item.quantity > (itemDoc.quantity || 0)) {
                     throw new AppError_1.default(http_status_1.default.BAD_REQUEST, `Not enough stock for item: ${itemDoc.name}. Available: ${itemDoc.quantity || 0}, Requested: ${item.quantity}`);
                 }
-                const amount = item.amount || item.quantity * item.rate;
-                let finalAmount = amount;
-                if (item.discount && item.discount > 0) {
-                    finalAmount = amount - item.discount;
-                }
-                processedItems.push({
-                    ...item,
-                    amount: finalAmount,
-                });
                 await item_model_1.Item.findByIdAndUpdate(item.item, { $inc: { quantity: -item.quantity } }, { session });
             }
-            const subTotal = processedItems.reduce((sum, item) => sum + item.amount, 0);
-            let total = subTotal;
-            if (payload.discount) {
-                if (payload.discount.type === "percentage") {
-                    total -= (total * payload.discount.value) / 100;
-                }
-                else {
-                    total -= payload.discount.value;
-                }
-            }
-            else if (existingSalesOrder.discount) {
-                if (existingSalesOrder.discount.type === "percentage") {
-                    total -= (total * existingSalesOrder.discount.value) / 100;
-                }
-                else {
-                    total -= existingSalesOrder.discount.value;
-                }
-            }
-            if (payload.shippingCharges !== undefined) {
-                total += payload.shippingCharges;
-            }
-            else if (existingSalesOrder.shippingCharges) {
-                total += existingSalesOrder.shippingCharges;
-            }
-            if (payload.adjustment !== undefined) {
-                total += payload.adjustment;
-            }
-            else if (existingSalesOrder.adjustment) {
-                total += existingSalesOrder.adjustment;
-            }
-            payload.items = processedItems;
-            payload.subTotal = subTotal;
-            payload.total = total;
-            if (payload.payment !== undefined) {
-                payload.due = total - payload.payment;
-            }
-            else if (existingSalesOrder.payment) {
-                payload.due = total - existingSalesOrder.payment;
-            }
-            else {
-                payload.due = total;
-            }
-        }
-        else if (payload.payment !== undefined) {
-            const currentTotal = existingSalesOrder.total;
-            payload.due = currentTotal - payload.payment;
         }
         const updatedSalesOrder = await salesOrder_model_1.SalesOrder.findByIdAndUpdate(id, payload, {
             new: true,

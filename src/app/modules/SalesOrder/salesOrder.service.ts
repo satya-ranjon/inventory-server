@@ -1,6 +1,5 @@
 import mongoose from "mongoose";
 import {
-  TOrderItem,
   TSalesOrder,
   TSalesOrderFilters,
 } from "./salesOrder.interface";
@@ -40,7 +39,6 @@ const generateOrderNumber = async (): Promise<string> => {
 
 // Create sales order
 const createSalesOrder = async (payload: TSalesOrder) => {
-  console.log(payload);
   const session = await mongoose.startSession();
   session.startTransaction();
 
@@ -51,12 +49,7 @@ const createSalesOrder = async (payload: TSalesOrder) => {
       throw new AppError(httpStatus.NOT_FOUND, "Customer not found");
     }
 
-    // Get the customer's previous due amount
-    const previousDue = customer.due || 0;
-
-    // Process items and check inventory
-    const processedItems: TOrderItem[] = [];
-
+    // Validate items and update inventory
     for (const item of payload.items) {
       // Check if item exists
       const itemDoc = await Item.findById(item.item).session(session);
@@ -67,21 +60,17 @@ const createSalesOrder = async (payload: TSalesOrder) => {
         );
       }
 
-      // Calculate amount if not provided
-      const amount = item.amount || item.quantity * item.rate;
-
-      // Apply item-level discount if provided
-      let finalAmount = amount;
-      if (item.discount && item.discount > 0) {
-        finalAmount = amount - item.discount;
+      // Check if enough stock is available
+      if (item.quantity > (itemDoc.quantity || 0)) {
+        throw new AppError(
+          httpStatus.BAD_REQUEST,
+          `Not enough stock for item: ${itemDoc.name}. Available: ${
+            itemDoc.quantity || 0
+          }, Requested: ${item.quantity}`
+        );
       }
 
-      processedItems.push({
-        ...item,
-        amount: finalAmount,
-      });
-
-      // Update inventory - removed type check
+      // Update inventory
       await Item.findByIdAndUpdate(
         item.item,
         { $inc: { quantity: -item.quantity } },
@@ -94,45 +83,25 @@ const createSalesOrder = async (payload: TSalesOrder) => {
       payload.orderNumber = await generateOrderNumber();
     }
 
-    // Calculate initial subtotal
-    const subTotal = processedItems.reduce((sum, item) => sum + item.amount, 0);
-
-    // Calculate total
-    let total = subTotal;
-    if (payload.discount) {
-      if (payload.discount.type === "percentage") {
-        total -= (total * payload.discount.value) / 100;
-      } else {
-        total -= payload.discount.value;
-      }
+    // Calculate subTotal from items if not provided (safety fallback)
+    if (!payload.subTotal) {
+      payload.subTotal = payload.items.reduce((sum, item) => sum + (item.amount || 0), 0);
     }
 
-    if (payload.shippingCharges) {
-      total += payload.shippingCharges;
-    }
-
-    if (payload.adjustment) {
-      total += payload.adjustment;
-    }
-
-    // Create sales order
+    // Use the calculated values from the frontend
+    // No recalculation - trust the frontend calculations
     const newOrder = {
       ...payload,
-      items: processedItems,
-      subTotal,
-      total,
       status: payload.status || "Draft",
       payment: payload.payment || 0,
-      previousDue: previousDue,
-      due: total - (payload.payment || 0) + previousDue,
     };
 
     const salesOrder = await SalesOrder.create([newOrder], { session });
 
-    // Update customer due amount
+    // Update customer due amount with the final due from the order
     await Customer.findByIdAndUpdate(
       payload.customer,
-      { $set: { due: newOrder.due } },
+      { $set: { due: newOrder.due || 0 } },
       { session }
     );
 
@@ -167,17 +136,9 @@ const updateSalesOrder = async (id: string, payload: Partial<TSalesOrder>) => {
 
     // Store the original due amount to calculate the difference later
     const originalDue = existingSalesOrder.due || 0;
-    const originalPreviousDue = existingSalesOrder.previousDue || 0;
 
-    // If previousDue is not in the payload but exists in the original order, keep it
-    if (payload.previousDue === undefined && originalPreviousDue > 0) {
-      payload.previousDue = originalPreviousDue;
-    }
-
-    // If items are being updated, process them
+    // If items are being updated, validate and update inventory
     if (payload.items && payload.items.length > 0) {
-      const processedItems: TOrderItem[] = [];
-
       // Revert inventory changes from existing items
       for (const item of existingSalesOrder.items) {
         await Item.findByIdAndUpdate(
@@ -187,7 +148,7 @@ const updateSalesOrder = async (id: string, payload: Partial<TSalesOrder>) => {
         );
       }
 
-      // Process new items and check inventory
+      // Validate new items and update inventory
       for (const item of payload.items) {
         // Check if item exists
         const itemDoc = await Item.findById(item.item).session(session);
@@ -208,20 +169,6 @@ const updateSalesOrder = async (id: string, payload: Partial<TSalesOrder>) => {
           );
         }
 
-        // Calculate amount if not provided
-        const amount = item.amount || item.quantity * item.rate;
-
-        // Apply item-level discount if provided
-        let finalAmount = amount;
-        if (item.discount && item.discount > 0) {
-          finalAmount = amount - item.discount;
-        }
-
-        processedItems.push({
-          ...item,
-          amount: finalAmount,
-        });
-
         // Update inventory
         await Item.findByIdAndUpdate(
           item.item,
@@ -229,64 +176,10 @@ const updateSalesOrder = async (id: string, payload: Partial<TSalesOrder>) => {
           { session }
         );
       }
-
-      // Calculate new subtotal
-      const subTotal = processedItems.reduce(
-        (sum, item) => sum + item.amount,
-        0
-      );
-
-      // Calculate new total
-      let total = subTotal;
-      if (payload.discount) {
-        if (payload.discount.type === "percentage") {
-          total -= (total * payload.discount.value) / 100;
-        } else {
-          total -= payload.discount.value;
-        }
-      } else if (existingSalesOrder.discount) {
-        if (existingSalesOrder.discount.type === "percentage") {
-          total -= (total * existingSalesOrder.discount.value) / 100;
-        } else {
-          total -= existingSalesOrder.discount.value;
-        }
-      }
-
-      if (payload.shippingCharges !== undefined) {
-        total += payload.shippingCharges;
-      } else if (existingSalesOrder.shippingCharges) {
-        total += existingSalesOrder.shippingCharges;
-      }
-
-      if (payload.adjustment !== undefined) {
-        total += payload.adjustment;
-      } else if (existingSalesOrder.adjustment) {
-        total += existingSalesOrder.adjustment;
-      }
-
-      // Update the payload with the new calculations
-      payload.items = processedItems;
-      payload.subTotal = subTotal;
-      payload.total = total;
-
-      // Calculate due amount if payment is provided
-      if (payload.payment !== undefined) {
-        payload.due = total - payload.payment;
-      } else if (existingSalesOrder.payment) {
-        // Use existing payment to calculate due
-        payload.due = total - existingSalesOrder.payment;
-      } else {
-        payload.due = total;
-      }
-    }
-    // If only payment is updated without changing items
-    else if (payload.payment !== undefined) {
-      // Get the current total from existing order
-      const currentTotal = existingSalesOrder.total;
-      // Calculate new due amount
-      payload.due = currentTotal - payload.payment;
     }
 
+    // Use the calculated values from the frontend
+    // No recalculation - trust the frontend calculations
     // Update the sales order
     const updatedSalesOrder = await SalesOrder.findByIdAndUpdate(id, payload, {
       new: true,

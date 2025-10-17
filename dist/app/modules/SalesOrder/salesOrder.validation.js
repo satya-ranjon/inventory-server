@@ -66,10 +66,30 @@ const updatePaymentValidationSchema = zod_1.z.object({
         payment: zod_1.z.number().nonnegative(),
     }),
 });
+const getSalesOrdersQueryValidationSchema = zod_1.z.object({
+    query: zod_1.z.object({
+        searchTerm: zod_1.z.string().optional(),
+        orderNumber: zod_1.z.string().optional(),
+        customer: zod_1.z.string().optional(),
+        status: zod_1.z.enum(["Draft", "Confirmed", "Shipped", "Delivered", "Cancelled"]).optional(),
+        fromDate: zod_1.z.string().datetime().optional(),
+        toDate: zod_1.z.string().datetime().optional(),
+        minAmount: zod_1.z.string().transform((val) => Number(val)).pipe(zod_1.z.number().nonnegative()).optional(),
+        maxAmount: zod_1.z.string().transform((val) => Number(val)).pipe(zod_1.z.number().nonnegative()).optional(),
+        payment: zod_1.z.string().transform((val) => Number(val)).pipe(zod_1.z.number().nonnegative()).optional(),
+        previousDue: zod_1.z.string().transform((val) => Number(val)).pipe(zod_1.z.number()).optional(),
+        due: zod_1.z.string().transform((val) => Number(val)).pipe(zod_1.z.number()).optional(),
+        page: zod_1.z.string().transform((val) => Number(val)).pipe(zod_1.z.number().positive()).optional(),
+        limit: zod_1.z.string().transform((val) => Number(val)).pipe(zod_1.z.number().positive()).optional(),
+        sort: zod_1.z.string().optional(),
+        fields: zod_1.z.string().optional(),
+    }),
+});
 exports.SalesOrderValidation = {
     createSalesOrderValidationSchema,
     updateSalesOrderValidationSchema,
     updateOrderStatusValidationSchema,
     updatePaymentValidationSchema,
+    getSalesOrdersQueryValidationSchema,
 };
 //# sourceMappingURL=salesOrder.validation.js.map

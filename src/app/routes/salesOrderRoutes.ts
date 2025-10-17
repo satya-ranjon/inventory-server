@@ -6,8 +6,12 @@ import auth from "../middlewares/auth";
 
 const router = express.Router();
 
-// GET all sales orders
-router.get("/", SalesOrderController.getAllSalesOrders);
+// GET all sales orders with query validation
+router.get(
+  "/",
+  validateRequest(SalesOrderValidation.getSalesOrdersQueryValidationSchema),
+  SalesOrderController.getAllSalesOrders
+);
 
 // GET single sales order
 router.get("/:id", SalesOrderController.getSingleSalesOrder);

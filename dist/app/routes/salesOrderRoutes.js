@@ -9,7 +9,7 @@ const validateRequest_1 = __importDefault(require("../middlewares/validateReques
 const salesOrder_validation_1 = require("../modules/SalesOrder/salesOrder.validation");
 const auth_1 = __importDefault(require("../middlewares/auth"));
 const router = express_1.default.Router();
-router.get("/", salesOrder_controller_1.SalesOrderController.getAllSalesOrders);
+router.get("/", (0, validateRequest_1.default)(salesOrder_validation_1.SalesOrderValidation.getSalesOrdersQueryValidationSchema), salesOrder_controller_1.SalesOrderController.getAllSalesOrders);
 router.get("/:id", salesOrder_controller_1.SalesOrderController.getSingleSalesOrder);
 router.post("/create", (0, auth_1.default)("admin", "manager", "employee"), (0, validateRequest_1.default)(salesOrder_validation_1.SalesOrderValidation.createSalesOrderValidationSchema), salesOrder_controller_1.SalesOrderController.createSalesOrder);
 router.patch("/:id", (0, auth_1.default)("admin", "manager"), (0, validateRequest_1.default)(salesOrder_validation_1.SalesOrderValidation.updateSalesOrderValidationSchema), salesOrder_controller_1.SalesOrderController.updateSalesOrder);
